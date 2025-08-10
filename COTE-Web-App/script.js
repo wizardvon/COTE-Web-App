@@ -7,7 +7,7 @@ document.getElementById('login-form').addEventListener('submit', function(event)
   // For now, we'll just check if the credentials match hardcoded values
   if (email === 'test@example.com' && password === 'password123') {
     alert('Login successful!');
-    // Redirect to the dashboard or homepage
+    window.location.href = 'home.html';
   } else {
     alert('Invalid credentials!');
   }
