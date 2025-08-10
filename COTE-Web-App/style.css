@@ -1,10 +1,17 @@
 body {
   font-family: Arial, sans-serif;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100vh;
   background-color: #f0f0f0;
+}
+
+.landing-title {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
 .login-container {
