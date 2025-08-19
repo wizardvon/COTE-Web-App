@@ -1,0 +1,49 @@
+<svg width="1200" height="400" viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0f1e"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+    <style>
+      .title {
+        font-family: 'Times New Roman', serif;
+        font-size: 64px;
+        font-weight: 700;
+        fill: #d4af37;
+      }
+      .tagline {
+        font-family: 'Georgia', serif;
+        font-style: italic;
+        font-size: 32px;
+        fill: #ffffff;
+      }
+      .icon {
+        fill: #ffffff;
+      }
+      .stroke-icon {
+        stroke: #ffffff;
+        stroke-width: 5;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </defs>
+  <rect width="1200" height="400" fill="url(#bg)"/>
+  <line x1="100" y1="50" x2="1100" y2="350" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <line x1="1100" y1="50" x2="100" y2="350" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <text x="600" y="170" text-anchor="middle" class="title">Classroom of the Elite</text>
+  <text x="600" y="240" text-anchor="middle" class="tagline">Discipline. Leadership. Teamwork.</text>
+  <!-- icons -->
+  <g transform="translate(450,300) scale(0.5)">
+    <polygon points="20,0 40,30 60,0 80,30 100,0 100,40 0,40 0,0" class="icon"/>
+  </g>
+  <g transform="translate(600,300) scale(0.5)">
+    <polyline points="0,20 10,30 30,10" class="stroke-icon"/>
+  </g>
+  <g transform="translate(730,300) scale(0.5)">
+    <path d="M10 10 h20 v10 h-20 z" class="icon"/>
+    <circle cx="10" cy="15" r="10" class="icon"/>
+    <circle cx="30" cy="15" r="10" class="icon"/>
+  </g>
+</svg>
