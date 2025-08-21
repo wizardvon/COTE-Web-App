@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profile</title>
+  <title>Teacher Scores</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,11 +17,28 @@
     <a href="about.html">About</a>
     <a href="help.html">Help</a>
     <a href="teacher.html">Teacher</a>
-      <a href="login.html">Login</a>
+    <a href="login.html">Login</a>
   </nav>
   <div class="card">
-    <h2>Profile Page</h2>
-    <p>Placeholder content for the profile page.</p>
+    <h2>Teacher Score Encoder</h2>
+    <button id="add-row">Add Student</button>
+    <table id="scores-table">
+      <thead>
+        <tr>
+          <th>Student Name</th>
+          <th>LRN</th>
+          <th>Written Works</th>
+          <th>Performance Task</th>
+          <th>Quarterly Exam</th>
+          <th>Merit Points</th>
+          <th>Demerit Points</th>
+        </tr>
+      </thead>
+      <tbody id="scores-body"></tbody>
+    </table>
+    <button id="download">Download CSV</button>
   </div>
+  <script src="teacher.js"></script>
 </body>
 </html>
+
