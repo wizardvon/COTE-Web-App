@@ -169,6 +169,17 @@ th, td {
   border: none;
 }
 
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.action-buttons button {
+  width: 48%;
+}
+
 #scores-table td:first-child,
 #scores-table #sub-header th:first-child {
   position: sticky;

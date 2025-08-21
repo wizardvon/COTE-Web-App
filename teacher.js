@@ -1,5 +1,6 @@
-// Event listener for CSV download
+// Event listeners for actions
 document.getElementById('download').addEventListener('click', downloadCSV);
+document.getElementById('save').addEventListener('click', saveTable);
 
 // Initial counts for dynamic columns
 let wwCount = 3;
@@ -140,6 +141,15 @@ function addWWColumn() {
   subHeader.insertBefore(th, totalHeader);
   document.getElementById('ww-group').colSpan = wwCount + 1;
 
+  const maxRow = document.getElementById('max-row');
+  const maxPlaceholder = document.getElementById('ww-max-placeholder');
+  const maxTh = document.createElement('th');
+  const maxInput = document.createElement('input');
+  maxInput.type = 'number';
+  maxInput.className = 'ww-max';
+  maxTh.appendChild(maxInput);
+  maxRow.insertBefore(maxTh, maxPlaceholder);
+
   const rows = document.querySelectorAll('#scores-body tr');
   rows.forEach(row => {
     const totalCell = row.querySelector('.ww-total').parentElement;
@@ -164,6 +174,15 @@ function addPTColumn() {
   th.textContent = `PT${ptCount}`;
   subHeader.insertBefore(th, totalHeader);
   document.getElementById('pt-group').colSpan = ptCount + 1;
+
+  const maxRow = document.getElementById('max-row');
+  const maxPlaceholder = document.getElementById('pt-max-placeholder');
+  const maxTh = document.createElement('th');
+  const maxInput = document.createElement('input');
+  maxInput.type = 'number';
+  maxInput.className = 'pt-max';
+  maxTh.appendChild(maxInput);
+  maxRow.insertBefore(maxTh, maxPlaceholder);
 
   const rows = document.querySelectorAll('#scores-body tr');
   rows.forEach(row => {
@@ -190,6 +209,15 @@ function addMeritColumn() {
   subHeader.insertBefore(th, totalHeader);
   document.getElementById('merit-group').colSpan = meritCount + 1;
 
+  const maxRow = document.getElementById('max-row');
+  const maxPlaceholder = document.getElementById('merit-max-placeholder');
+  const maxTh = document.createElement('th');
+  const maxInput = document.createElement('input');
+  maxInput.type = 'text';
+  maxInput.className = 'merit-label';
+  maxTh.appendChild(maxInput);
+  maxRow.insertBefore(maxTh, maxPlaceholder);
+
   const rows = document.querySelectorAll('#scores-body tr');
   rows.forEach(row => {
     const totalCell = row.querySelector('.merit-total').parentElement;
@@ -214,6 +242,15 @@ function addDemeritColumn() {
   th.textContent = `D${demeritCount}`;
   subHeader.insertBefore(th, totalHeader);
   document.getElementById('demerit-group').colSpan = demeritCount + 1;
+
+  const maxRow = document.getElementById('max-row');
+  const maxPlaceholder = document.getElementById('demerit-max-placeholder');
+  const maxTh = document.createElement('th');
+  const maxInput = document.createElement('input');
+  maxInput.type = 'text';
+  maxInput.className = 'demerit-label';
+  maxTh.appendChild(maxInput);
+  maxRow.insertBefore(maxTh, maxPlaceholder);
 
   const rows = document.querySelectorAll('#scores-body tr');
   rows.forEach(row => {
@@ -247,9 +284,41 @@ function downloadCSV() {
   link.click();
 }
 
-// Initialize with one row
-addRow();
-updateWWAddButton();
-updatePTAddButton();
-updateMeritAddButton();
-updateDemeritAddButton();
+function saveTable() {
+  localStorage.setItem('scoresTable', document.getElementById('scores-table').innerHTML);
+  localStorage.setItem('wwCount', wwCount);
+  localStorage.setItem('ptCount', ptCount);
+  localStorage.setItem('meritCount', meritCount);
+  localStorage.setItem('demeritCount', demeritCount);
+  alert('Scores saved');
+}
+
+function loadSavedData() {
+  const saved = localStorage.getItem('scoresTable');
+  if (saved) {
+    document.getElementById('scores-table').innerHTML = saved;
+    wwCount = parseInt(localStorage.getItem('wwCount')) || 3;
+    ptCount = parseInt(localStorage.getItem('ptCount')) || 3;
+    meritCount = parseInt(localStorage.getItem('meritCount')) || 3;
+    demeritCount = parseInt(localStorage.getItem('demeritCount')) || 3;
+    document.querySelectorAll('#scores-body tr').forEach(row => {
+      attachRowListeners(row);
+      updateRowTotals(row);
+    });
+    document.querySelectorAll('#ww-group .add-col-btn').forEach(btn => btn.addEventListener('click', addWWColumn));
+    document.querySelectorAll('#pt-group .add-col-btn').forEach(btn => btn.addEventListener('click', addPTColumn));
+    document.querySelectorAll('#merit-group .add-col-btn').forEach(btn => btn.addEventListener('click', addMeritColumn));
+    document.querySelectorAll('#demerit-group .add-col-btn').forEach(btn => btn.addEventListener('click', addDemeritColumn));
+    updateAddRowButton();
+  } else {
+    addRow();
+    updateAddRowButton();
+  }
+  updateWWAddButton();
+  updatePTAddButton();
+  updateMeritAddButton();
+  updateDemeritAddButton();
+}
+
+// Initialize
+loadSavedData();
