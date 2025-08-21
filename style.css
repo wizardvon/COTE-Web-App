@@ -107,22 +107,22 @@ th, td {
 }
 
 #scores-table th, #scores-table td {
-  padding: 2px;
+  padding: 1px;
 }
 
 #scores-table input {
-  padding: 4px;
+  padding: 2px;
   margin: 0;
 }
 
 #scores-table input[type="number"] {
-  width: 40px;
+  width: 35px;
   -moz-appearance: textfield;
 }
 
 #scores-table .merit-label,
 #scores-table .demerit-label {
-  width: 40px;
+  width: 35px;
 }
 
 #scores-table input[type="number"]::-webkit-outer-spin-button,
@@ -150,11 +150,11 @@ th, td {
   top: 2px;
   right: 2px;
   display: inline-block;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   padding: 0;
   margin: 0;
-  line-height: 20px;
+  line-height: 18px;
   background-color: #4CAF50;
   color: white;
   border: none;
@@ -164,9 +164,9 @@ th, td {
 
 .add-row-btn {
   display: inline-block;
-  width: 24px;
-  height: 24px;
-  line-height: 24px;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
   padding: 0;
   margin: 0;
   background-color: #4CAF50;
