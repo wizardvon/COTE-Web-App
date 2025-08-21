@@ -186,13 +186,13 @@ th, td {
 
 .action-buttons {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   gap: 10px;
   margin-top: 10px;
 }
 
 .action-buttons button {
-  width: 48%;
+  width: auto;
 }
 
 #scores-table td:first-child,
