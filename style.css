@@ -131,23 +131,9 @@ th, td {
   margin: 0;
 }
 
-#group-header th {
-  position: sticky;
-  top: 0;
-  background-color: #1e1e1e;
-  z-index: 3;
-}
-
-#sub-header th {
-  position: sticky;
-  top: 30px;
-  background-color: #1e1e1e;
-  z-index: 2;
-}
-
 #max-row th {
   position: sticky;
-  top: 60px;
+  top: 0;
   background-color: #1e1e1e;
   z-index: 1;
 }
@@ -209,22 +195,16 @@ th, td {
   width: 48%;
 }
 
-#scores-table th:first-child,
-#scores-table td:first-child {
+#scores-table td:first-child,
+#scores-table #sub-header th:first-child {
   position: sticky;
   left: 0;
   background-color: #1e1e1e;
-  z-index: 2;
-  min-width: 120px;
+  z-index: 1;
 }
 
-#scores-table th:nth-child(2),
-#scores-table td:nth-child(2) {
-  position: sticky;
-  left: 120px;
-  background-color: #1e1e1e;
+#scores-table #sub-header th:first-child {
   z-index: 2;
-  min-width: 100px;
 }
 
 @media (max-width: 600px) {
