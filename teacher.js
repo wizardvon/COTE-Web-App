@@ -215,6 +215,7 @@ function addMeritColumn() {
   const maxInput = document.createElement('input');
   maxInput.type = 'text';
   maxInput.className = 'merit-label';
+  maxInput.maxLength = 4;
   maxTh.appendChild(maxInput);
   maxRow.insertBefore(maxTh, maxPlaceholder);
 
@@ -249,6 +250,7 @@ function addDemeritColumn() {
   const maxInput = document.createElement('input');
   maxInput.type = 'text';
   maxInput.className = 'demerit-label';
+  maxInput.maxLength = 4;
   maxTh.appendChild(maxInput);
   maxRow.insertBefore(maxTh, maxPlaceholder);
 

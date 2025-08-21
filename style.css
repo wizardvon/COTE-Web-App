@@ -107,20 +107,35 @@ th, td {
 }
 
 #scores-table th, #scores-table td {
+  padding: 2px;
+}
+
+#scores-table input {
   padding: 4px;
+  margin: 0;
 }
 
 #scores-table input[type="number"] {
   width: 40px;
-  padding: 4px;
-  margin: 0;
   -moz-appearance: textfield;
+}
+
+#scores-table .merit-label,
+#scores-table .demerit-label {
+  width: 40px;
 }
 
 #scores-table input[type="number"]::-webkit-outer-spin-button,
 #scores-table input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+#max-row th {
+  position: sticky;
+  top: 0;
+  background-color: #1e1e1e;
+  z-index: 1;
 }
 
 #sub-header .ww-header,
