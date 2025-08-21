@@ -158,6 +158,10 @@ th, td {
   text-align: center;
 }
 
+.add-row-spacer {
+  border: none;
+}
+
 #scores-table th:first-child,
 #scores-table td:first-child {
   position: sticky;
