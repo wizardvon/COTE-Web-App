@@ -26,31 +26,23 @@
         <thead>
         <tr id="group-header">
           <th colspan="4">Student Profile</th>
-          <th id="ww-group" colspan="4">Written Works</th>
-          <th id="pt-group" colspan="4">Performance Task</th>
-          <th id="merit-group" colspan="4">Merit</th>
-          <th id="demerit-group" colspan="4">Demerit</th>
+          <th id="ww-group" colspan="2">Written Works</th>
+          <th id="pt-group" colspan="2">Performance Task</th>
+          <th id="merit-group" colspan="2">Merit</th>
+          <th id="demerit-group" colspan="2">Demerit</th>
         </tr>
         <tr id="sub-header">
           <th>Student Name</th>
           <th>LRN</th>
           <th>Grade-Section</th>
           <th>Class</th>
-          <th class="ww-header">WW1</th>
-          <th class="ww-header">WW2</th>
-          <th class="ww-header">WW3</th>
-          <th id="ww-total-header">TWW</th>
+          <th class="ww-header">W1</th>
+          <th id="ww-total-header">TW</th>
           <th class="pt-header">PT1</th>
-          <th class="pt-header">PT2</th>
-          <th class="pt-header">PT3</th>
-          <th id="pt-total-header">TPT</th>
+          <th id="pt-total-header">TP</th>
           <th class="merit-header">M1</th>
-          <th class="merit-header">M2</th>
-          <th class="merit-header">M3</th>
           <th id="merit-total-header">TM</th>
           <th class="demerit-header">D1</th>
-          <th class="demerit-header">D2</th>
-          <th class="demerit-header">D3</th>
           <th id="demerit-total-header">TD</th>
         </tr>
         <tr id="max-row">
@@ -59,19 +51,11 @@
           <th></th>
           <th></th>
           <th><input type="number" class="ww-max"></th>
-          <th><input type="number" class="ww-max"></th>
-          <th><input type="number" class="ww-max"></th>
           <th id="ww-max-placeholder"></th>
-          <th><input type="number" class="pt-max"></th>
-          <th><input type="number" class="pt-max"></th>
           <th><input type="number" class="pt-max"></th>
           <th id="pt-max-placeholder"></th>
           <th><input type="text" class="merit-label" maxlength="4"></th>
-          <th><input type="text" class="merit-label" maxlength="4"></th>
-          <th><input type="text" class="merit-label" maxlength="4"></th>
           <th id="merit-max-placeholder"></th>
-          <th><input type="text" class="demerit-label" maxlength="4"></th>
-          <th><input type="text" class="demerit-label" maxlength="4"></th>
           <th><input type="text" class="demerit-label" maxlength="4"></th>
           <th id="demerit-max-placeholder"></th>
         </tr>
@@ -84,7 +68,7 @@
       <button id="download">Download CSV</button>
     </div>
   </div>
-  <script src="teacher.js"></script>
+  <script type="module" src="teacher.js"></script>
 </body>
 </html>
 

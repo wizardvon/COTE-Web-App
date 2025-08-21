@@ -1,12 +1,25 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+// Replace with your Firebase configuration
+const firebaseConfig = {
+  // apiKey: "YOUR_API_KEY",
+  // authDomain: "YOUR_AUTH_DOMAIN",
+  // projectId: "YOUR_PROJECT_ID",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 // Event listeners for actions
 document.getElementById('download').addEventListener('click', downloadCSV);
 document.getElementById('save').addEventListener('click', saveTable);
 
 // Initial counts for dynamic columns
-let wwCount = 3;
-let ptCount = 3;
-let meritCount = 3;
-let demeritCount = 3;
+let wwCount = 1;
+let ptCount = 1;
+let meritCount = 1;
+let demeritCount = 1;
 
 function addRow() {
   const tbody = document.getElementById('scores-body');
@@ -137,7 +150,7 @@ function addWWColumn() {
   const totalHeader = document.getElementById('ww-total-header');
   const th = document.createElement('th');
   th.className = 'ww-header';
-  th.textContent = `WW${wwCount}`;
+  th.textContent = `W${wwCount}`;
   subHeader.insertBefore(th, totalHeader);
   document.getElementById('ww-group').colSpan = wwCount + 1;
 
@@ -286,23 +299,36 @@ function downloadCSV() {
   link.click();
 }
 
-function saveTable() {
-  localStorage.setItem('scoresTable', document.getElementById('scores-table').innerHTML);
+async function saveTable() {
+  const tableHTML = document.getElementById('scores-table').innerHTML;
+  localStorage.setItem('scoresTable', tableHTML);
   localStorage.setItem('wwCount', wwCount);
   localStorage.setItem('ptCount', ptCount);
   localStorage.setItem('meritCount', meritCount);
   localStorage.setItem('demeritCount', demeritCount);
-  alert('Scores saved');
+  try {
+    await setDoc(doc(db, 'scores', 'table'), {
+      tableHTML,
+      wwCount,
+      ptCount,
+      meritCount,
+      demeritCount
+    });
+    alert('Scores saved');
+  } catch (e) {
+    console.error('Firebase save failed', e);
+    alert('Scores saved locally');
+  }
 }
 
-function loadSavedData() {
+async function loadSavedData() {
   const saved = localStorage.getItem('scoresTable');
   if (saved) {
     document.getElementById('scores-table').innerHTML = saved;
-    wwCount = parseInt(localStorage.getItem('wwCount')) || 3;
-    ptCount = parseInt(localStorage.getItem('ptCount')) || 3;
-    meritCount = parseInt(localStorage.getItem('meritCount')) || 3;
-    demeritCount = parseInt(localStorage.getItem('demeritCount')) || 3;
+    wwCount = parseInt(localStorage.getItem('wwCount')) || 1;
+    ptCount = parseInt(localStorage.getItem('ptCount')) || 1;
+    meritCount = parseInt(localStorage.getItem('meritCount')) || 1;
+    demeritCount = parseInt(localStorage.getItem('demeritCount')) || 1;
     document.querySelectorAll('#scores-body tr').forEach(row => {
       attachRowListeners(row);
       updateRowTotals(row);
@@ -313,8 +339,33 @@ function loadSavedData() {
     document.querySelectorAll('#demerit-group .add-col-btn').forEach(btn => btn.addEventListener('click', addDemeritColumn));
     updateAddRowButton();
   } else {
-    addRow();
-    updateAddRowButton();
+    try {
+      const docSnap = await getDoc(doc(db, 'scores', 'table'));
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        document.getElementById('scores-table').innerHTML = data.tableHTML || '';
+        wwCount = data.wwCount || 1;
+        ptCount = data.ptCount || 1;
+        meritCount = data.meritCount || 1;
+        demeritCount = data.demeritCount || 1;
+        document.querySelectorAll('#scores-body tr').forEach(row => {
+          attachRowListeners(row);
+          updateRowTotals(row);
+        });
+        document.querySelectorAll('#ww-group .add-col-btn').forEach(btn => btn.addEventListener('click', addWWColumn));
+        document.querySelectorAll('#pt-group .add-col-btn').forEach(btn => btn.addEventListener('click', addPTColumn));
+        document.querySelectorAll('#merit-group .add-col-btn').forEach(btn => btn.addEventListener('click', addMeritColumn));
+        document.querySelectorAll('#demerit-group .add-col-btn').forEach(btn => btn.addEventListener('click', addDemeritColumn));
+        updateAddRowButton();
+      } else {
+        addRow();
+        updateAddRowButton();
+      }
+    } catch (e) {
+      console.error('Firebase load failed', e);
+      addRow();
+      updateAddRowButton();
+    }
   }
   updateWWAddButton();
   updatePTAddButton();
