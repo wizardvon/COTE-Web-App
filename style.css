@@ -162,15 +162,15 @@ th, td {
   border: none;
 }
 
-#scores-table th:first-child,
-#scores-table td:first-child {
+#scores-table td:first-child,
+#scores-table #sub-header th:first-child {
   position: sticky;
   left: 0;
   background-color: #1e1e1e;
   z-index: 1;
 }
 
-#scores-table th:first-child {
+#scores-table #sub-header th:first-child {
   z-index: 2;
 }
 

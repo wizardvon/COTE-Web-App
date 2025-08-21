@@ -61,54 +61,50 @@ function updateRowTotals(row) {
 }
 
 function updateWWAddButton() {
-  document.querySelectorAll('.ww-header .add-col-btn').forEach(btn => btn.remove());
-  const lastWWHeader = document.querySelector('#sub-header .ww-header:last-of-type');
-  if (lastWWHeader) {
-    lastWWHeader.style.position = 'relative';
+  const header = document.getElementById('ww-group');
+  header.style.position = 'relative';
+  if (!header.querySelector('.add-col-btn')) {
     const btn = document.createElement('button');
     btn.textContent = '+';
     btn.className = 'add-col-btn';
     btn.addEventListener('click', addWWColumn);
-    lastWWHeader.appendChild(btn);
+    header.appendChild(btn);
   }
 }
 
 function updatePTAddButton() {
-  document.querySelectorAll('.pt-header .add-col-btn').forEach(btn => btn.remove());
-  const lastPTHeader = document.querySelector('#sub-header .pt-header:last-of-type');
-  if (lastPTHeader) {
-    lastPTHeader.style.position = 'relative';
+  const header = document.getElementById('pt-group');
+  header.style.position = 'relative';
+  if (!header.querySelector('.add-col-btn')) {
     const btn = document.createElement('button');
     btn.textContent = '+';
     btn.className = 'add-col-btn';
     btn.addEventListener('click', addPTColumn);
-    lastPTHeader.appendChild(btn);
+    header.appendChild(btn);
   }
 }
 
 function updateMeritAddButton() {
-  document.querySelectorAll('.merit-header .add-col-btn').forEach(btn => btn.remove());
-  const lastMeritHeader = document.querySelector('#sub-header .merit-header:last-of-type');
-  if (lastMeritHeader) {
-    lastMeritHeader.style.position = 'relative';
+  const header = document.getElementById('merit-group');
+  header.style.position = 'relative';
+  if (!header.querySelector('.add-col-btn')) {
     const btn = document.createElement('button');
     btn.textContent = '+';
     btn.className = 'add-col-btn';
     btn.addEventListener('click', addMeritColumn);
-    lastMeritHeader.appendChild(btn);
+    header.appendChild(btn);
   }
 }
 
 function updateDemeritAddButton() {
-  document.querySelectorAll('.demerit-header .add-col-btn').forEach(btn => btn.remove());
-  const lastDemeritHeader = document.querySelector('#sub-header .demerit-header:last-of-type');
-  if (lastDemeritHeader) {
-    lastDemeritHeader.style.position = 'relative';
+  const header = document.getElementById('demerit-group');
+  header.style.position = 'relative';
+  if (!header.querySelector('.add-col-btn')) {
     const btn = document.createElement('button');
     btn.textContent = '+';
     btn.className = 'add-col-btn';
     btn.addEventListener('click', addDemeritColumn);
-    lastDemeritHeader.appendChild(btn);
+    header.appendChild(btn);
   }
 }
 
