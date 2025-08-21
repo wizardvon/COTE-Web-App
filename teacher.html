@@ -21,17 +21,43 @@
   </nav>
   <div class="card">
     <h2>Teacher Score Encoder</h2>
-    <button id="add-row">Add Student</button>
+    <div class="controls">
+      <button id="add-row">Add Student</button>
+      <button id="add-ww">Add WW</button>
+      <button id="add-pt">Add PT</button>
+      <button id="add-merit">Add Merit</button>
+      <button id="add-demerit">Add Demerit</button>
+    </div>
     <table id="scores-table">
       <thead>
-        <tr>
+        <tr id="group-header">
+          <th colspan="4">Student Profile</th>
+          <th id="ww-group" colspan="4">Written Works</th>
+          <th id="pt-group" colspan="4">Performance Task</th>
+          <th id="merit-group" colspan="4">Merit</th>
+          <th id="demerit-group" colspan="4">Demerit</th>
+        </tr>
+        <tr id="sub-header">
           <th>Student Name</th>
           <th>LRN</th>
-          <th>Written Works</th>
-          <th>Performance Task</th>
-          <th>Quarterly Exam</th>
-          <th>Merit Points</th>
-          <th>Demerit Points</th>
+          <th>Grade-Section</th>
+          <th>Class</th>
+          <th class="ww-header">WW1</th>
+          <th class="ww-header">WW2</th>
+          <th class="ww-header">WW3</th>
+          <th id="ww-total-header">TWW</th>
+          <th class="pt-header">PT1</th>
+          <th class="pt-header">PT2</th>
+          <th class="pt-header">PT3</th>
+          <th id="pt-total-header">TPT</th>
+          <th class="merit-header">M1</th>
+          <th class="merit-header">M2</th>
+          <th class="merit-header">M3</th>
+          <th id="merit-total-header">TM</th>
+          <th class="demerit-header">D1</th>
+          <th class="demerit-header">D2</th>
+          <th class="demerit-header">D3</th>
+          <th id="demerit-total-header">TD</th>
         </tr>
       </thead>
       <tbody id="scores-body"></tbody>
