@@ -30,6 +30,11 @@ body {
   width: 95%;
 }
 
+.table-container {
+  overflow: auto;
+  max-height: 400px;
+}
+
 .navbar {
   width: 100%;
   background-color: #333;
@@ -111,11 +116,14 @@ th, td {
   margin: 0;
 }
 
-#sub-header .ww-header {
+#sub-header .ww-header,
+#sub-header .pt-header,
+#sub-header .merit-header,
+#sub-header .demerit-header {
   position: relative;
 }
 
-.add-ww-btn {
+.add-col-btn {
   position: absolute;
   top: 2px;
   right: 2px;
@@ -130,6 +138,36 @@ th, td {
   border: none;
   border-radius: 3px;
   cursor: pointer;
+}
+
+.add-row-btn {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  padding: 0;
+  margin: 0;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.add-row-cell {
+  text-align: center;
+}
+
+#scores-table th:first-child,
+#scores-table td:first-child {
+  position: sticky;
+  left: 0;
+  background-color: #1e1e1e;
+  z-index: 1;
+}
+
+#scores-table th:first-child {
+  z-index: 2;
 }
 
 @media (max-width: 600px) {

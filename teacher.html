@@ -21,14 +21,9 @@
   </nav>
   <div class="card teacher-card">
     <h2>Teacher Score Encoder</h2>
-    <div class="controls">
-      <button id="add-row">Add Student</button>
-      <button id="add-pt">Add PT</button>
-      <button id="add-merit">Add Merit</button>
-      <button id="add-demerit">Add Demerit</button>
-    </div>
-    <table id="scores-table">
-      <thead>
+    <div class="table-container">
+      <table id="scores-table">
+        <thead>
         <tr id="group-header">
           <th colspan="4">Student Profile</th>
           <th id="ww-group" colspan="4">Written Works</th>
@@ -61,6 +56,7 @@
       </thead>
       <tbody id="scores-body"></tbody>
     </table>
+    </div>
     <button id="download">Download CSV</button>
   </div>
   <script src="teacher.js"></script>
