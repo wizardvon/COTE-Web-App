@@ -118,15 +118,19 @@ function updateAddRowButton() {
   if (existing) existing.remove();
   const addRowRow = document.createElement('tr');
   addRowRow.id = 'add-row-btn-row';
-  const td = document.createElement('td');
-  td.colSpan = 4 + (wwCount + 1) + (ptCount + 1) + (meritCount + 1) + (demeritCount + 1);
-  td.className = 'add-row-cell';
+  const totalColumns = 4 + (wwCount + 1) + (ptCount + 1) + (meritCount + 1) + (demeritCount + 1);
+  const btnCell = document.createElement('td');
+  btnCell.className = 'add-row-cell';
   const btn = document.createElement('button');
   btn.textContent = '+';
   btn.className = 'add-row-btn';
   btn.addEventListener('click', addRow);
-  td.appendChild(btn);
-  addRowRow.appendChild(td);
+  btnCell.appendChild(btn);
+  addRowRow.appendChild(btnCell);
+  const spacer = document.createElement('td');
+  spacer.colSpan = totalColumns - 1;
+  spacer.className = 'add-row-spacer';
+  addRowRow.appendChild(spacer);
   tbody.appendChild(addRowRow);
 }
 
