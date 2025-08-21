@@ -114,6 +114,13 @@ th, td {
   width: 40px;
   padding: 4px;
   margin: 0;
+  -moz-appearance: textfield;
+}
+
+#scores-table input[type="number"]::-webkit-outer-spin-button,
+#scores-table input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 #sub-header .ww-header,
