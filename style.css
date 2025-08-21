@@ -84,6 +84,18 @@ button:hover {
   background-color: #45a049;
 }
 
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+th, td {
+  border: 1px solid #333;
+  padding: 8px;
+  text-align: center;
+}
+
 @media (max-width: 600px) {
   .navbar {
     flex-direction: column;
