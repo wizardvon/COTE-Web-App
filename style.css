@@ -25,6 +25,11 @@ body {
   width: 80%;
 }
 
+.teacher-card {
+  max-width: 1200px;
+  width: 95%;
+}
+
 .navbar {
   width: 100%;
   background-color: #333;
@@ -94,6 +99,37 @@ th, td {
   border: 1px solid #333;
   padding: 8px;
   text-align: center;
+}
+
+#scores-table th, #scores-table td {
+  padding: 4px;
+}
+
+#scores-table input[type="number"] {
+  width: 40px;
+  padding: 4px;
+  margin: 0;
+}
+
+#sub-header .ww-header {
+  position: relative;
+}
+
+.add-ww-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  line-height: 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
 }
 
 @media (max-width: 600px) {

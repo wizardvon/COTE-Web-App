@@ -1,6 +1,5 @@
 // Event listeners for adding rows and columns
 document.getElementById('add-row').addEventListener('click', addRow);
-document.getElementById('add-ww').addEventListener('click', addWWColumn);
 document.getElementById('add-pt').addEventListener('click', addPTColumn);
 document.getElementById('add-merit').addEventListener('click', addMeritColumn);
 document.getElementById('add-demerit').addEventListener('click', addDemeritColumn);
@@ -64,6 +63,19 @@ function updateRowTotals(row) {
   row.querySelector('.demerit-total').value = sum('.demerit-input');
 }
 
+function updateWWAddButton() {
+  document.querySelectorAll('.ww-header .add-ww-btn').forEach(btn => btn.remove());
+  const lastWWHeader = document.querySelector('#sub-header .ww-header:last-of-type');
+  if (lastWWHeader) {
+    lastWWHeader.style.position = 'relative';
+    const btn = document.createElement('button');
+    btn.textContent = '+';
+    btn.className = 'add-ww-btn';
+    btn.addEventListener('click', addWWColumn);
+    lastWWHeader.appendChild(btn);
+  }
+}
+
 function addWWColumn() {
   wwCount++;
   const subHeader = document.getElementById('sub-header');
@@ -85,6 +97,7 @@ function addWWColumn() {
     td.appendChild(input);
     row.insertBefore(td, totalCell);
   });
+  updateWWAddButton();
 }
 
 function addPTColumn() {
@@ -175,4 +188,5 @@ function downloadCSV() {
 
 // Initialize with one row
 addRow();
+updateWWAddButton();
 
