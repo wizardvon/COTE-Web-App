@@ -3,9 +3,13 @@ import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/fireb
 
 // Replace with your Firebase configuration
 const firebaseConfig = {
-  // apiKey: "YOUR_API_KEY",
-  // authDomain: "YOUR_AUTH_DOMAIN",
-  // projectId: "YOUR_PROJECT_ID",
+  apiKey: "AIzaSyDtaaCxT9tYXPwX3Pvoh_5pJosdmI1KEkM",
+  authDomain: "cote-web-app.firebaseapp.com",
+  projectId: "cote-web-app",
+  storageBucket: "cote-web-app.firebasestorage.app",
+  messagingSenderId: "763908867537",
+  appId: "1:763908867537:web:8611fb58fdaca485be0cf0",
+  measurementId: "G-ZHZDZDGKQX"
 };
 
 const app = initializeApp(firebaseConfig);
