@@ -195,6 +195,13 @@ document.getElementById('create-school-form').addEventListener('submit', async e
   };
   if (!data.name || !data.address) { alert('Fill required fields'); return; }
   try {
+    const user = auth.currentUser;
+    if (!user) { alert('Only teachers can create schools'); return; }
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (!userDoc.exists() || userDoc.data().role !== 'teacher') {
+      alert('Only teachers can create schools');
+      return;
+    }
     await createSchool(data);
     alert('School created');
     e.target.reset();
