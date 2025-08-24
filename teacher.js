@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 // Replace with your Firebase configuration
 const firebaseConfig = {
@@ -13,7 +14,35 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore(app);
+
+export async function createSchool(name) {
+  const ref = doc(collection(db, 'schools'));
+  await setDoc(ref, { name, ownerUid: auth.currentUser.uid });
+  alert('School created');
+  return ref.id;
+}
+
+export async function createTerm(schoolId, { name, startDate, endDate }) {
+  const ref = doc(collection(db, 'schools', schoolId, 'terms'));
+  await setDoc(ref, { name, startDate, endDate });
+  alert('Term created');
+  return ref.id;
+}
+
+export async function createClass(schoolId, termId, { name, gradeLevel, section }) {
+  const ref = doc(collection(db, 'schools', schoolId, 'terms', termId, 'classes'));
+  await setDoc(ref, { name, gradeLevel, section, teacherUid: auth.currentUser.uid });
+  alert('Class created');
+  return ref.id;
+}
+
+export async function addRosterRow(schoolId, termId, classId, { name, lrn, birthdate }) {
+  const ref = doc(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'roster'));
+  await setDoc(ref, { name, lrn, birthdate, linkedUid: null });
+  alert('Student added');
+}
 
 // Event listeners for actions
 document.getElementById('download').addEventListener('click', downloadCSV);

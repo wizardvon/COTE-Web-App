@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { autoLinkStudentToClasses } from './autolink.js';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -40,6 +41,9 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
       data.birthdate = birthdate;
     }
     await setDoc(doc(db, 'users', uid), data);
+    if (role === 'student') {
+      await autoLinkStudentToClasses({ lrn, birthdate });
+    }
     alert('Registration successful!');
     window.location.href = 'login.html';
   } catch (err) {

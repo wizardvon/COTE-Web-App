@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { autoLinkStudentToClasses } from './autolink.js';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -32,6 +33,7 @@ document.getElementById('login-form').addEventListener('submit', async (event) =
       if (data.role === 'teacher') {
         window.location.href = 'teacher.html';
       } else {
+        await autoLinkStudentToClasses({ lrn: data.lrn, birthdate: data.birthdate });
         window.location.href = 'profile.html';
       }
     } else {
