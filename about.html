@@ -10,14 +10,14 @@
   <img src="banner.svg" alt="Classroom of the Elite banner" class="banner">
   <nav class="navbar">
     <a href="index.html">Home</a>
-    <a href="profile.html">Profile</a>
-    <a href="cote-task.html">COTE Task</a>
-    <a href="elms.html">eLMs</a>
-    <a href="transfer.html">Transfer</a>
+    <a id="profile-link" href="profile.html">Profile</a>
+    <a id="cote-task-link" href="cote-task.html">COTE Task</a>
+    <a id="elms-link" href="elms.html">eLMs</a>
+    <a id="transfer-link" href="transfer.html">Transfer</a>
     <a href="about.html">About</a>
     <a href="help.html">Help</a>
-    <a href="teacher.html">Teacher</a>
-      <a href="login.html">Login</a>
+    <a id="teacher-link" href="teacher.html">Teacher</a>
+    <a id="login-link" href="login.html">Login</a>
   </nav>
   <div class="card">
     <h1>About Classroom of the Elite</h1>
@@ -44,5 +44,10 @@
     </ul>
     <p>✨ In essence, the Classroom of the Elite Program transforms the classroom into a training ground for excellence in academics, values, and life.</p>
   </div>
+
+  <script type="module">
+    import { setupNav } from './auth.js';
+    setupNav();
+  </script>
 </body>
 </html>

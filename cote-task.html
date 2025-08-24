@@ -10,18 +10,24 @@
   <img src="banner.svg" alt="Classroom of the Elite banner" class="banner">
   <nav class="navbar">
     <a href="index.html">Home</a>
-    <a href="profile.html">Profile</a>
-    <a href="cote-task.html">COTE Task</a>
-    <a href="elms.html">eLMs</a>
-    <a href="transfer.html">Transfer</a>
+    <a id="profile-link" href="profile.html">Profile</a>
+    <a id="cote-task-link" href="cote-task.html">COTE Task</a>
+    <a id="elms-link" href="elms.html">eLMs</a>
+    <a id="transfer-link" href="transfer.html">Transfer</a>
     <a href="about.html">About</a>
     <a href="help.html">Help</a>
-    <a href="teacher.html">Teacher</a>
-      <a href="login.html">Login</a>
+    <a id="teacher-link" href="teacher.html">Teacher</a>
+    <a id="login-link" href="login.html">Login</a>
   </nav>
   <div class="card">
     <h2>COTE Task Page</h2>
     <p>Placeholder content for the COTE task page.</p>
   </div>
+
+  <script type="module">
+    import { setupNav, requireLogin } from './auth.js';
+    setupNav();
+    requireLogin();
+  </script>
 </body>
 </html>
