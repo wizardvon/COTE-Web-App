@@ -191,13 +191,9 @@ document.getElementById('create-school-form').addEventListener('submit', async e
   const data = {
     name: getVal('school-name'),
     address: getVal('school-address'),
-    schoolYear: getVal('school-year'),
-    principal: getVal('school-principal') || null,
-    contactEmail: getVal('school-contact-email') || null,
-    contactPhone: getVal('school-contact-phone') || null,
     logoUrl: getVal('school-logo-url') || null
   };
-  if (!data.name || !data.address || !data.schoolYear) { alert('Fill required fields'); return; }
+  if (!data.name || !data.address) { alert('Fill required fields'); return; }
   try {
     await createSchool(data);
     alert('School created');
@@ -212,19 +208,10 @@ document.getElementById('create-term-form').addEventListener('submit', async e =
   e.preventDefault();
   const schoolId = document.getElementById('school-select').value;
   const data = {
-    name: getVal('term-name'),
-    startDate: getVal('term-start'),
-    endDate: getVal('term-end')
+    schoolYear: getVal('school-year'),
+    name: getVal('term-name')
   };
-  const weights = {};
-  const ww = getVal('weight-ww');
-  const pt = getVal('weight-pt');
-  const exam = getVal('weight-exam');
-  if (ww) weights.ww = Number(ww);
-  if (pt) weights.pt = Number(pt);
-  if (exam) weights.exam = Number(exam);
-  if (Object.keys(weights).length) data.weights = weights;
-  if (!schoolId || !data.name || !data.startDate || !data.endDate) { alert('Fill required fields'); return; }
+  if (!schoolId || !data.schoolYear || !data.name) { alert('Fill required fields'); return; }
   try {
     await createTerm(schoolId, data);
     alert('Term created');
@@ -245,12 +232,9 @@ document.getElementById('create-class-form').addEventListener('submit', async e 
     name: getVal('class-name'),
     gradeLevel: getVal('grade-level'),
     section: getVal('section'),
-    strand: getVal('strand') || null,
-    subject: getVal('subject') || null,
-    room: getVal('room') || null,
-    schedule: getVal('schedule') || null
+    subject: getVal('subject')
   };
-  if (!schoolId || !termId || !data.name || !data.gradeLevel || !data.section) { alert('Fill required fields'); return; }
+  if (!schoolId || !termId || !data.name || !data.gradeLevel || !data.section || !data.subject) { alert('Fill required fields'); return; }
   try {
     await createClass(schoolId, termId, data);
     alert('Class created');
