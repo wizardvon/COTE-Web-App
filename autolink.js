@@ -9,7 +9,7 @@ const firebaseConfig = {
   storageBucket: "cote-web-app.appspot.com",
   messagingSenderId: "763908867537",
   appId: "1:763908867537:web:8611fb58fdaca485be0cf0",
-  measurementId: "G-ZHZDZDGKQX",
+  measurementId: "G-ZHZDZDGKQX"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -28,11 +28,20 @@ export async function autoLinkStudentToClasses({ lrn, birthdate }) {
   const snap = await getDocs(q);
   if (snap.empty) return;
   const batch = writeBatch(db);
-  snap.forEach(docSnap => {
-    batch.update(docSnap.ref, { linkedUid: user.uid });
-    const classRef = docSnap.ref.parent.parent;
-    batch.set(doc(db, 'users', user.uid, 'enrollments', classRef.id), { classPath: classRef.path }, { merge: true });
-    batch.set(doc(classRef, 'enrollments', user.uid), { uid: user.uid }, { merge: true });
+  const linkedAt = Date.now();
+  snap.forEach(d => {
+    batch.set(d.ref, { linkedUid: user.uid }, { merge: true });
+    const parts = d.ref.path.split('/');
+    const schoolId = parts[1];
+    const termId = parts[3];
+    const classId = parts[5];
+    const classRef = doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId);
+    batch.set(doc(db, 'users', user.uid, 'enrollments', classId), {
+      schoolId, termId, classId, lrn, birthdate, linkedAt
+    }, { merge: true });
+    batch.set(doc(classRef, 'enrollments', user.uid), {
+      uid: user.uid, email: user.email, lrn, birthdate, linkedAt
+    }, { merge: true });
   });
   await batch.commit();
 }

@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { autoLinkStudentToClasses } from './autolink.js';
 
@@ -33,15 +33,16 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
   const birthdate = document.getElementById('birthdate').value;
 
   try {
+    await setPersistence(auth, browserLocalPersistence);
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const uid = userCredential.user.uid;
-    const data = { email, role };
+    const data = { email, role, createdAt: Date.now() };
     if (role === 'student') {
-      data.lrn = lrn;
-      data.birthdate = birthdate;
+      if (lrn) data.lrn = lrn;
+      if (birthdate) data.birthdate = birthdate;
     }
     await setDoc(doc(db, 'users', uid), data);
-    if (role === 'student') {
+    if (role === 'student' && lrn && birthdate) {
       await autoLinkStudentToClasses({ lrn, birthdate });
     }
     alert('Registration successful!');

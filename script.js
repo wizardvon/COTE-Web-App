@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { autoLinkStudentToClasses } from './autolink.js';
 
@@ -25,6 +25,7 @@ document.getElementById('login-form').addEventListener('submit', async (event) =
   const password = document.getElementById('password').value;
 
   try {
+    await setPersistence(auth, browserLocalPersistence);
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const uid = userCredential.user.uid;
     const userDoc = await getDoc(doc(db, 'users', uid));
@@ -33,7 +34,9 @@ document.getElementById('login-form').addEventListener('submit', async (event) =
       if (data.role === 'teacher') {
         window.location.href = 'teacher.html';
       } else {
-        await autoLinkStudentToClasses({ lrn: data.lrn, birthdate: data.birthdate });
+        if (data.lrn && data.birthdate) {
+          await autoLinkStudentToClasses({ lrn: data.lrn, birthdate: data.birthdate });
+        }
         window.location.href = 'profile.html';
       }
     } else {
