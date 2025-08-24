@@ -17,6 +17,12 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+let classSelection = null;
+window.addEventListener('class-selected', e => {
+  classSelection = e.detail;
+  loadSavedData();
+});
+
 export async function createSchool(name) {
   const ref = doc(collection(db, 'schools'));
   await setDoc(ref, { name, ownerUid: auth.currentUser.uid });
@@ -333,6 +339,7 @@ function downloadCSV() {
 }
 
 async function saveTable() {
+  if (!classSelection) { alert('Select class first'); return; }
   const tableHTML = document.getElementById('scores-table').innerHTML;
   localStorage.setItem('scoresTable', tableHTML);
   localStorage.setItem('wwCount', wwCount);
@@ -340,12 +347,14 @@ async function saveTable() {
   localStorage.setItem('meritCount', meritCount);
   localStorage.setItem('demeritCount', demeritCount);
   try {
-    await setDoc(doc(db, 'scores', 'table'), {
+    const { schoolId, termId, classId } = classSelection;
+    await setDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'scores', auth.currentUser.uid), {
       tableHTML,
       wwCount,
       ptCount,
       meritCount,
-      demeritCount
+      demeritCount,
+      updatedAt: Date.now()
     });
     alert('Scores saved');
   } catch (e) {
@@ -355,6 +364,7 @@ async function saveTable() {
 }
 
 async function loadSavedData() {
+  if (!classSelection) return;
   const saved = localStorage.getItem('scoresTable');
   if (saved) {
     document.getElementById('scores-table').innerHTML = saved;
@@ -362,18 +372,10 @@ async function loadSavedData() {
     ptCount = parseInt(localStorage.getItem('ptCount')) || 1;
     meritCount = parseInt(localStorage.getItem('meritCount')) || 1;
     demeritCount = parseInt(localStorage.getItem('demeritCount')) || 1;
-    document.querySelectorAll('#scores-body tr').forEach(row => {
-      attachRowListeners(row);
-      updateRowTotals(row);
-    });
-    document.querySelectorAll('#ww-group .add-col-btn').forEach(btn => btn.addEventListener('click', addWWColumn));
-    document.querySelectorAll('#pt-group .add-col-btn').forEach(btn => btn.addEventListener('click', addPTColumn));
-    document.querySelectorAll('#merit-group .add-col-btn').forEach(btn => btn.addEventListener('click', addMeritColumn));
-    document.querySelectorAll('#demerit-group .add-col-btn').forEach(btn => btn.addEventListener('click', addDemeritColumn));
-    updateAddRowButton();
   } else {
     try {
-      const docSnap = await getDoc(doc(db, 'scores', 'table'));
+      const { schoolId, termId, classId } = classSelection;
+      const docSnap = await getDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'scores', auth.currentUser.uid));
       if (docSnap.exists()) {
         const data = docSnap.data();
         document.getElementById('scores-table').innerHTML = data.tableHTML || '';
@@ -381,25 +383,23 @@ async function loadSavedData() {
         ptCount = data.ptCount || 1;
         meritCount = data.meritCount || 1;
         demeritCount = data.demeritCount || 1;
-        document.querySelectorAll('#scores-body tr').forEach(row => {
-          attachRowListeners(row);
-          updateRowTotals(row);
-        });
-        document.querySelectorAll('#ww-group .add-col-btn').forEach(btn => btn.addEventListener('click', addWWColumn));
-        document.querySelectorAll('#pt-group .add-col-btn').forEach(btn => btn.addEventListener('click', addPTColumn));
-        document.querySelectorAll('#merit-group .add-col-btn').forEach(btn => btn.addEventListener('click', addMeritColumn));
-        document.querySelectorAll('#demerit-group .add-col-btn').forEach(btn => btn.addEventListener('click', addDemeritColumn));
-        updateAddRowButton();
       } else {
         addRow();
-        updateAddRowButton();
       }
     } catch (e) {
       console.error('Firebase load failed', e);
       addRow();
-      updateAddRowButton();
     }
   }
+  document.querySelectorAll('#scores-body tr').forEach(row => {
+    attachRowListeners(row);
+    updateRowTotals(row);
+  });
+  document.querySelectorAll('#ww-group .add-col-btn').forEach(btn => btn.addEventListener('click', addWWColumn));
+  document.querySelectorAll('#pt-group .add-col-btn').forEach(btn => btn.addEventListener('click', addPTColumn));
+  document.querySelectorAll('#merit-group .add-col-btn').forEach(btn => btn.addEventListener('click', addMeritColumn));
+  document.querySelectorAll('#demerit-group .add-col-btn').forEach(btn => btn.addEventListener('click', addDemeritColumn));
+  updateAddRowButton();
   updateWWAddButton();
   updatePTAddButton();
   updateMeritAddButton();
@@ -407,4 +407,3 @@ async function loadSavedData() {
 }
 
 // Initialize
-loadSavedData();

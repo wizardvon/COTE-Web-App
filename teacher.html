@@ -20,6 +20,64 @@
     <a id="login-link" href="login.html">Login</a>
     <a id="logout-link" href="#" style="display:none;">Logout</a>
   </nav>
+  <div id="admin-panel" class="card">
+    <h2>School Admin</h2>
+    <form id="create-school-form">
+      <input id="school-name" placeholder="School Name" required>
+      <input id="school-address" placeholder="Address" required>
+      <input id="school-year" placeholder="School Year" required>
+      <input id="school-principal" placeholder="Principal">
+      <input id="school-contact-email" placeholder="Contact Email">
+      <input id="school-contact-phone" placeholder="Contact Phone">
+      <input id="school-logo-url" placeholder="Logo URL">
+      <button type="submit">Create School</button>
+    </form>
+    <ul id="school-list"></ul>
+
+    <form id="create-term-form">
+      <select id="school-select"></select>
+      <input id="term-name" placeholder="Term Name" required>
+      <input id="term-start" type="date" required>
+      <input id="term-end" type="date" required>
+      <input id="weight-ww" type="number" placeholder="WW%">
+      <input id="weight-pt" type="number" placeholder="PT%">
+      <input id="weight-exam" type="number" placeholder="Exam%">
+      <button type="submit">Create Term</button>
+    </form>
+    <ul id="term-list"></ul>
+
+    <form id="create-class-form">
+      <select id="school-select-2"></select>
+      <select id="term-select"></select>
+      <input id="class-name" placeholder="Class Name" required>
+      <input id="grade-level" placeholder="Grade Level" required>
+      <input id="section" placeholder="Section" required>
+      <input id="strand" placeholder="Strand">
+      <input id="subject" placeholder="Subject">
+      <input id="room" placeholder="Room">
+      <input id="schedule" placeholder="Schedule">
+      <button type="submit">Create Class</button>
+    </form>
+    <ul id="class-list"></ul>
+
+    <form id="add-student-form">
+      <select id="school-select-3"></select>
+      <select id="term-select-2"></select>
+      <select id="class-select"></select>
+      <input id="student-name" placeholder="Student Name" required>
+      <input id="student-lrn" placeholder="LRN" required>
+      <input id="student-birthdate" type="date" required>
+      <select id="student-sex" required>
+        <option value="">Sex</option>
+        <option value="M">M</option>
+        <option value="F">F</option>
+      </select>
+      <input id="student-email" placeholder="Email">
+      <input id="guardian-contact" placeholder="Guardian Contact">
+      <button type="submit">Add Student</button>
+    </form>
+    <table id="roster-table"></table>
+  </div>
   <div class="card teacher-card">
     <h2>Teacher Score Encoder</h2>
     <div class="table-container">
@@ -74,6 +132,7 @@
     setupNav();
     requireLogin(['teacher']);
   </script>
+  <script type="module" src="teacher-admin.js"></script>
   <script type="module" src="teacher.js"></script>
 </body>
 </html>
