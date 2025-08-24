@@ -20,9 +20,9 @@ function getVal(id) { return document.getElementById(id).value.trim(); }
 function validLRN(v) { return /^\d{12}$/.test(v); }
 function validDate(v) { return /^\d{4}-\d{2}-\d{2}$/.test(v); }
 
-export async function createSchool(data) {
+export async function createSchool(ownerUid, data) {
   const ref = doc(collection(db, 'schools'));
-  await setDoc(ref, { ...data, ownerUid: auth.currentUser.uid, createdAt: Date.now(), archived: false });
+  await setDoc(ref, { ...data, ownerUid, createdAt: Date.now(), archived: false });
   return ref.id;
 }
 
@@ -202,7 +202,7 @@ document.getElementById('create-school-form').addEventListener('submit', async e
       alert('Only teachers can create schools');
       return;
     }
-    await createSchool(data);
+    await createSchool(user.uid, data);
     alert('School created');
     e.target.reset();
     listSchoolsByOwner(auth.currentUser.uid);
