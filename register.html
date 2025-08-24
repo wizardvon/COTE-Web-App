@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>COTE - Login</title>
+  <title>COTE - Register</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,22 +17,35 @@
     <a href="about.html">About</a>
     <a href="help.html">Help</a>
     <a href="teacher.html">Teacher</a>
-      <a href="login.html">Login</a>
+    <a href="login.html">Login</a>
   </nav>
   <div class="card">
-    <h2>Login</h2>
-    <form id="login-form">
+    <h2>Register</h2>
+    <form id="register-form">
       <label for="email">Email:</label>
       <input type="email" id="email" name="email" required>
 
       <label for="password">Password:</label>
       <input type="password" id="password" name="password" required>
 
-      <button type="submit">Login</button>
+      <label for="role">Role:</label>
+      <select id="role" name="role" required>
+        <option value="student">Student</option>
+        <option value="teacher">Teacher</option>
+      </select>
+
+      <div id="student-fields" style="display: block;">
+        <label for="lrn">LRN:</label>
+        <input type="text" id="lrn" name="lrn">
+
+        <label for="birthdate">Birthdate:</label>
+        <input type="date" id="birthdate" name="birthdate">
+      </div>
+
+      <button type="submit">Register</button>
     </form>
-    <p>Don't have an account? <a href="register.html">Register</a></p>
   </div>
 
-  <script type="module" src="script.js"></script>
+  <script type="module" src="register.js"></script>
 </body>
 </html>
