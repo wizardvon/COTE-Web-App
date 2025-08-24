@@ -10,14 +10,14 @@
   <img src="banner.svg" alt="Classroom of the Elite banner" class="banner">
   <nav class="navbar">
     <a href="index.html">Home</a>
-    <a href="profile.html">Profile</a>
-    <a href="cote-task.html">COTE Task</a>
-    <a href="elms.html">eLMs</a>
-    <a href="transfer.html">Transfer</a>
+    <a id="profile-link" href="profile.html">Profile</a>
+    <a id="cote-task-link" href="cote-task.html">COTE Task</a>
+    <a id="elms-link" href="elms.html">eLMs</a>
+    <a id="transfer-link" href="transfer.html">Transfer</a>
     <a href="about.html">About</a>
     <a href="help.html">Help</a>
-    <a href="teacher.html">Teacher</a>
-    <a href="login.html">Login</a>
+    <a id="teacher-link" href="teacher.html">Teacher</a>
+    <a id="login-link" href="login.html">Login</a>
   </nav>
   <div class="card teacher-card">
     <h2>Teacher Score Encoder</h2>
@@ -68,6 +68,11 @@
       <button id="download">Download CSV</button>
     </div>
   </div>
+  <script type="module">
+    import { setupNav, requireLogin } from './auth.js';
+    setupNav();
+    requireLogin(['teacher']);
+  </script>
   <script type="module" src="teacher.js"></script>
 </body>
 </html>
