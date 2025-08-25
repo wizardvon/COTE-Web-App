@@ -125,9 +125,7 @@ export async function listClasses(schoolId, termId) {
     });
     li.appendChild(btn);
     li.addEventListener('click', () => {
-      window.currentSelection = { schoolId, termId, classId: c.id };
-      window.dispatchEvent(new CustomEvent('class-selected', { detail: window.currentSelection }));
-      listRoster(schoolId, termId, c.id);
+      window.location.href = `teacher-score.html?schoolId=${schoolId}&termId=${termId}&classId=${c.id}`;
     });
     list.appendChild(li);
   });
@@ -206,6 +204,7 @@ document.getElementById('create-school-form').addEventListener('submit', async e
     alert('School created');
     e.target.reset();
     listSchoolsByOwner(auth.currentUser.uid);
+    window.dispatchEvent(new Event('refresh-class-tree'));
   } catch (err) {
     alert(err.message);
   }
@@ -226,6 +225,7 @@ document.getElementById('create-term-form').addEventListener('submit', async e =
     listTerms(schoolId);
     populateTermOptions(schoolId, 'term-select');
     populateTermOptions(schoolId, 'term-select-2');
+    window.dispatchEvent(new Event('refresh-class-tree'));
   } catch (err) {
     alert(err.message);
   }
@@ -236,18 +236,20 @@ document.getElementById('create-class-form').addEventListener('submit', async e 
   const schoolId = document.getElementById('school-select-2').value;
   const termId = document.getElementById('term-select').value;
   const data = {
-    name: getVal('class-name'),
+    className: getVal('class-name'),
     gradeLevel: getVal('grade-level'),
     section: getVal('section'),
     subject: getVal('subject')
   };
-  if (!schoolId || !termId || !data.name || !data.gradeLevel || !data.section || !data.subject) { alert('Fill required fields'); return; }
+  if (!schoolId || !termId || !data.className || !data.gradeLevel || !data.section || !data.subject) { alert('Fill required fields'); return; }
   try {
-    await createClass(schoolId, termId, data);
+    const combined = `${data.gradeLevel} - ${data.section} - ${data.subject} - ${data.className}`;
+    await createClass(schoolId, termId, { name: combined, gradeLevel: data.gradeLevel, section: data.section, subject: data.subject, classCode: data.className });
     alert('Class created');
     e.target.reset();
     listClasses(schoolId, termId);
     populateClassOptions(schoolId, termId, 'class-select');
+    window.dispatchEvent(new Event('refresh-class-tree'));
   } catch (err) {
     alert(err.message);
   }
