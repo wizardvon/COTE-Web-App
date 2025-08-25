@@ -51,7 +51,9 @@ export async function archiveDoc(ref, archived = true) {
 export async function listAvailableSchools(uid) {
   const snap = await getDocs(collection(db, 'schools'));
   const list = document.getElementById('school-list');
-  const schoolSelects = ['school-select', 'school-select-2'].map(id => document.getElementById(id));
+  const schoolSelects = ['school-select', 'school-select-2']
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
   list.innerHTML = '';
   schoolSelects.forEach(sel => sel.innerHTML = '<option value="">Select School</option>');
   if (snap.empty) {
@@ -98,6 +100,16 @@ export async function listAvailableSchools(uid) {
       li.appendChild(btn);
     }
     list.appendChild(li);
+  }
+  if (schoolSelects.length) {
+    schoolSelects.forEach(sel => {
+      if (sel.options.length > 1 && !sel.value) sel.value = sel.options[1].value;
+    });
+    const selected = document.getElementById('school-select-2')?.value;
+    if (selected) {
+      await populateTermOptions(selected, 'term-select');
+      await listTerms(selected);
+    }
   }
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
@@ -257,6 +269,7 @@ document.getElementById('create-class-form').addEventListener('submit', async e 
 });
 
 document.getElementById('school-select-2').addEventListener('change', e => populateTermOptions(e.target.value, 'term-select'));
+document.getElementById('school-select').addEventListener('change', e => listTerms(e.target.value));
 
 document.getElementById('toggle-school-form').addEventListener('click', () => {
   const form = document.getElementById('create-school-form');
