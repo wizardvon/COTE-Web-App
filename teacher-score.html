@@ -26,6 +26,19 @@
   </div>
   <div class="card teacher-card">
     <h2>Teacher Score Encoder</h2>
+    <form id="add-student-form">
+      <input id="student-name" placeholder="Student Name" required>
+      <input id="student-lrn" placeholder="LRN" required>
+      <input id="student-birthdate" type="date" required>
+      <select id="student-sex" required>
+        <option value="">Sex</option>
+        <option value="M">M</option>
+        <option value="F">F</option>
+      </select>
+      <input id="student-email" placeholder="Email">
+      <input id="guardian-contact" placeholder="Guardian Contact">
+      <button type="submit">Add Student</button>
+    </form>
     <div class="table-container">
       <table id="scores-table">
         <thead>

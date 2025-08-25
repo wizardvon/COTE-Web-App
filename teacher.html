@@ -22,15 +22,18 @@
   </nav>
   <div id="admin-panel" class="card">
     <h2>School Admin</h2>
-    <form id="create-school-form">
+    <ul id="school-list"></ul>
+
+    <button id="toggle-school-form">Create School</button>
+    <form id="create-school-form" style="display:none;">
       <input id="school-name" placeholder="School Name" required>
       <input id="school-address" placeholder="Address" required>
       <input id="school-logo-url" placeholder="Logo URL">
       <button type="submit">Create School</button>
     </form>
-    <ul id="school-list"></ul>
 
-    <form id="create-term-form">
+    <button id="toggle-term-form">Create Term</button>
+    <form id="create-term-form" style="display:none;">
       <select id="school-select"></select>
       <input id="school-year" placeholder="School Year" required>
       <input id="term-name" placeholder="Term Name" required>
@@ -38,7 +41,8 @@
     </form>
     <ul id="term-list"></ul>
 
-    <form id="create-class-form">
+    <button id="toggle-class-form">Create Class</button>
+    <form id="create-class-form" style="display:none;">
       <select id="school-select-2"></select>
       <select id="term-select"></select>
       <input id="class-name" placeholder="Class Name" required>
@@ -48,24 +52,6 @@
       <button type="submit">Create Class</button>
     </form>
     <ul id="class-list"></ul>
-
-    <form id="add-student-form">
-      <select id="school-select-3"></select>
-      <select id="term-select-2"></select>
-      <select id="class-select"></select>
-      <input id="student-name" placeholder="Student Name" required>
-      <input id="student-lrn" placeholder="LRN" required>
-      <input id="student-birthdate" type="date" required>
-      <select id="student-sex" required>
-        <option value="">Sex</option>
-        <option value="M">M</option>
-        <option value="F">F</option>
-      </select>
-      <input id="student-email" placeholder="Email">
-      <input id="guardian-contact" placeholder="Guardian Contact">
-      <button type="submit">Add Student</button>
-    </form>
-    <table id="roster-table"></table>
   </div>
   <div class="card">
     <h2>Classes</h2>

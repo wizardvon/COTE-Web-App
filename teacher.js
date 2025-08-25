@@ -18,6 +18,10 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let classSelection = null;
+let currentClassInfo = {};
+function getVal(id) { return document.getElementById(id)?.value.trim(); }
+function validLRN(v) { return /^\d{12}$/.test(v); }
+function validDate(v) { return /^\d{4}-\d{2}-\d{2}$/.test(v); }
 window.addEventListener('class-selected', e => {
   classSelection = e.detail;
   loadSavedData();
@@ -44,15 +48,32 @@ export async function createClass(schoolId, termId, { name, gradeLevel, section 
   return ref.id;
 }
 
-export async function addRosterRow(schoolId, termId, classId, { name, lrn, birthdate }) {
+export async function addRosterRow(schoolId, termId, classId, data) {
   const ref = doc(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'roster'));
-  await setDoc(ref, { name, lrn, birthdate, linkedUid: null });
+  await setDoc(ref, { ...data, linkedUid: null, createdAt: Date.now() });
   alert('Student added');
 }
 
 // Event listeners for actions
 document.getElementById('download').addEventListener('click', downloadCSV);
 document.getElementById('save').addEventListener('click', saveTable);
+document.getElementById('add-student-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!classSelection) { alert('Select class first'); return; }
+  const data = {
+    name: getVal('student-name'),
+    lrn: getVal('student-lrn'),
+    birthdate: getVal('student-birthdate'),
+    sex: getVal('student-sex'),
+    email: getVal('student-email') || null,
+    guardianContact: getVal('guardian-contact') || null
+  };
+  if (!data.name || !validLRN(data.lrn) || !validDate(data.birthdate) || !data.sex) { alert('Invalid input'); return; }
+  const { schoolId, termId, classId } = classSelection;
+  await addRosterRow(schoolId, termId, classId, data);
+  addStudentRow(data, currentClassInfo);
+  e.target.reset();
+});
 
 // Initial counts for dynamic columns
 let wwCount = 1;
@@ -402,6 +423,9 @@ async function saveTable() {
 
 async function loadSavedData() {
   if (!classSelection) return;
+  const { schoolId, termId, classId } = classSelection;
+  const classDoc = await getDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId));
+  currentClassInfo = classDoc.exists() ? classDoc.data() : {};
   const saved = localStorage.getItem('scoresTable');
   if (saved) {
     document.getElementById('scores-table').innerHTML = saved;
@@ -411,7 +435,6 @@ async function loadSavedData() {
     demeritCount = parseInt(localStorage.getItem('demeritCount')) || 1;
   } else {
     try {
-      const { schoolId, termId, classId } = classSelection;
       const docSnap = await getDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'scores', auth.currentUser.uid));
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -421,10 +444,8 @@ async function loadSavedData() {
         meritCount = data.meritCount || 1;
         demeritCount = data.demeritCount || 1;
       } else {
-        const classDoc = await getDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId));
-        const classInfo = classDoc.exists() ? classDoc.data() : {};
         const rosterSnap = await getDocs(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'roster'));
-        rosterSnap.forEach(r => addStudentRow(r.data(), classInfo));
+        rosterSnap.forEach(r => addStudentRow(r.data(), currentClassInfo));
         if (rosterSnap.size === 0) addRow();
       }
     } catch (e) {
