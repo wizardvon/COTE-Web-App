@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDtaaCxT9tYXPwX3Pvoh_5pJosdmI1KEkM",
@@ -16,12 +16,16 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-function getVal(id) { return document.getElementById(id).value.trim(); }
-
-window.currentSelection = { schoolId: null, termId: null, classId: null };
+function getVal(id) { return document.getElementById(id)?.value.trim(); }
 function toggle(el, show) { if (!el) return; el.classList[show ? 'remove' : 'add']('hidden'); }
-let currentSchoolOwnerUid = null;
+function confirmTyped(action, keyword, name) {
+  const input = prompt(`${action} "${name}"\nType ${keyword} to confirm:`);
+  return input === keyword;
+}
+
+window.currentSelection = { schoolId: null, termId: null, classId: null, ownerUid: null };
 const schoolCache = new Map();
+
 export async function createSchool(ownerUid, data) {
   const existing = await getDocs(collection(db, 'schools'));
   const duplicate = existing.docs.some(d => d.data().name.toLowerCase() === data.name.toLowerCase());
@@ -34,8 +38,8 @@ export async function createSchool(ownerUid, data) {
 export async function createTerm(schoolId, data) {
   const existing = await getDocs(collection(db, 'schools', schoolId, 'terms'));
   const duplicate = existing.docs.some(d => {
-    const term = d.data();
-    return term.schoolYear === data.schoolYear && term.name.toLowerCase() === data.name.toLowerCase();
+    const t = d.data();
+    return t.schoolYear === data.schoolYear && t.name.toLowerCase() === data.name.toLowerCase();
   });
   if (duplicate) throw new Error('School year and term already exist');
   const ref = doc(collection(db, 'schools', schoolId, 'terms'));
@@ -53,275 +57,284 @@ export async function archiveDoc(ref, archived = true) {
   await updateDoc(ref, { archived });
 }
 
-export async function listSchoolsForTeacher(uid) {
+async function listSchoolsForTeacher(uid) {
   const list = document.getElementById('school-list');
-  const schoolSelectIds = ['school-select', 'school-select-2', 'school-select-3'];
-  const schoolSelects = schoolSelectIds.map(id => document.getElementById(id)).filter(Boolean);
   list.innerHTML = '';
-  schoolSelects.forEach(sel => sel.innerHTML = "<option value=''>Select School</option>");
   schoolCache.clear();
-  try {
-    const schoolSnap = await getDocs(collection(db, 'schools'));
-    for (const sDoc of schoolSnap.docs) {
-      const data = sDoc.data();
-      const id = sDoc.id;
-      if (data.ownerUid === uid) {
-        schoolCache.set(id, data);
-        continue;
-      }
+
+  const snap = await getDocs(collection(db, 'schools'));
+  for (const sDoc of snap.docs) {
+    const data = sDoc.data();
+    const id = sDoc.id;
+    let include = false;
+    if (data.ownerUid === uid) {
+      include = true;
+    } else {
       const termSnap = await getDocs(collection(db, 'schools', id, 'terms'));
       for (const tDoc of termSnap.docs) {
         const classSnap = await getDocs(collection(db, 'schools', id, 'terms', tDoc.id, 'classes'));
-        if (classSnap.docs.some(c => c.data().teacherUid === uid)) {
-          schoolCache.set(id, data);
-          break;
-        }
+        if (classSnap.docs.some(c => c.data().teacherUid === uid)) { include = true; break; }
       }
     }
-    schoolCache.forEach((data, id) => {
-      const li = document.createElement('li');
-      li.className = 'row';
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'name';
-      nameSpan.textContent = data.name + (data.archived ? ' (Archived)' : '');
-      const archiveSpan = document.createElement('span');
-      archiveSpan.className = 'archive-link';
-      archiveSpan.textContent = data.archived ? 'Unarchive' : 'Archive';
-      const canArchive = data.ownerUid === uid;
-      if (!canArchive) {
-        archiveSpan.classList.add('disabled');
-        archiveSpan.title = 'Only owner can archive';
-      } else {
-        archiveSpan.addEventListener('click', async e => {
-          e.stopPropagation();
-          const msg = data.archived ? `Are you sure you want to unarchive ${data.name}?` : `Are you sure you want to archive ${data.name}?`;
-          if (!confirm(msg)) return;
-          await updateDoc(doc(db, 'schools', id), { archived: !data.archived });
-          await listSchoolsForTeacher(uid);
-        });
-      }
-      nameSpan.addEventListener('click', async () => {
-        window.currentSelection = { schoolId: id, termId: null, classId: null };
-        currentSchoolOwnerUid = data.ownerUid;
-        document.getElementById('school-select').value = id;
-        const sel2 = document.getElementById('school-select-2'); if (sel2) sel2.value = id;
-        toggle(document.getElementById('toggle-term-form'), true);
-        toggle(document.getElementById('create-term-form'), true);
-        toggle(document.getElementById('toggle-class-form'), false);
-        toggle(document.getElementById('create-class-form'), false);
-        await listTerms(id);
-      });
-      li.append(nameSpan, archiveSpan);
-      list.appendChild(li);
-      schoolSelects.forEach(sel => {
-        const opt = document.createElement('option');
-        opt.value = id;
-        opt.textContent = data.name;
-        sel.appendChild(opt);
-      });
-    });
-    return Array.from(schoolCache, ([id, data]) => ({ id, ...data }));
-  } catch (err) {
-    console.error(err);
-    return [];
+    if (include) schoolCache.set(id, data);
   }
-}
 
-export async function listAvailableSchools(uid) {
-  const snap = await getDocs(collection(db, 'schools'));
-  const list = document.getElementById('school-list');
-  const schoolSelects = ['school-select', 'school-select-2']
-    .map(id => document.getElementById(id))
-    .filter(Boolean);
-  list.innerHTML = '';
-  schoolSelects.forEach(sel => sel.innerHTML = '<option value="">Select School</option>');
-  if (snap.empty) {
+  schoolCache.forEach((data, id) => {
     const li = document.createElement('li');
-    li.textContent = 'No schools available';
+    li.className = 'row';
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.dataset.id = id;
+    name.textContent = data.name + (data.archived ? ' (Archived)' : '');
+
+    const actions = document.createElement('span');
+    actions.className = 'actions';
+
+    const edit = document.createElement('span');
+    edit.className = 'link-btn edit-school';
+    edit.dataset.id = id;
+    edit.textContent = 'Edit';
+
+    const del = document.createElement('span');
+    del.className = 'danger-link delete-school';
+    del.dataset.id = id;
+    del.textContent = 'Delete';
+
+    const arch = document.createElement('span');
+    arch.className = 'archive-link' + (data.ownerUid === uid ? '' : ' disabled');
+    arch.dataset.id = id;
+    arch.textContent = data.archived ? 'Unarchive' : 'Archive';
+    if (data.ownerUid !== uid) arch.title = 'Only owner can archive';
+
+    actions.append(edit, del, arch);
+    li.append(name, actions);
     list.appendChild(li);
-    return [];
-  }
-  for (const d of snap.docs) {
-    const data = d.data();
-    const id = d.id;
-    const li = document.createElement('li');
-    li.textContent = data.name + (data.archived ? ' (Archived)' : '');
-    const isOwner = data.ownerUid === uid;
-    const memberDoc = await getDoc(doc(db, 'schools', id, 'teachers', uid));
-    const isMember = isOwner || memberDoc.exists();
+  });
 
-    // Add all schools to selection dropdowns regardless of membership
-    schoolSelects.forEach(sel => {
-      const opt = document.createElement('option');
-      opt.value = id;
-      opt.textContent = data.name;
-      sel.appendChild(opt);
-    });
+  list.querySelectorAll('.name').forEach(el => el.addEventListener('click', async e => {
+    const id = e.target.dataset.id;
+    const data = schoolCache.get(id);
+    window.currentSelection = { schoolId: id, termId: null, classId: null, ownerUid: data.ownerUid };
+    toggle(document.getElementById('terms-section'), true);
+    toggle(document.getElementById('classes-section'), false);
+    toggle(document.getElementById('create-term-form'), false);
+    await listTerms(id);
+  }));
 
-    if (isMember) {
-      if (isOwner) {
-        const btn = document.createElement('button');
-        btn.textContent = data.archived ? 'Unarchive' : 'Archive';
-        btn.addEventListener('click', async e => {
-          e.stopPropagation();
-          await archiveDoc(doc(db, 'schools', id), !data.archived);
-          listAvailableSchools(uid);
-        });
-        li.appendChild(btn);
-      }
-      li.addEventListener('click', () => listTerms(id));
-    } else {
-      const btn = document.createElement('button');
-      btn.textContent = 'Join';
-      btn.addEventListener('click', async e => {
-        e.stopPropagation();
-        await joinSchool(id);
-        listAvailableSchools(uid);
-        window.dispatchEvent(new Event('refresh-class-tree'));
-      });
-      li.appendChild(btn);
+  list.querySelectorAll('.edit-school').forEach(el => el.addEventListener('click', async e => {
+    e.stopPropagation();
+    const id = e.target.dataset.id;
+    const data = schoolCache.get(id);
+    if (!confirmTyped('Edit school', 'EDITE', data.name)) return;
+    const name = prompt('School Name:', data.name) || data.name;
+    const address = prompt('Address:', data.address || '') || data.address || '';
+    const logoUrl = prompt('Logo URL:', data.logoUrl || '') || data.logoUrl || null;
+    await updateDoc(doc(db, 'schools', id), { name, address, logoUrl });
+    await listSchoolsForTeacher(uid);
+  }));
+
+  list.querySelectorAll('.delete-school').forEach(el => el.addEventListener('click', async e => {
+    e.stopPropagation();
+    const id = e.target.dataset.id;
+    const data = schoolCache.get(id);
+    const termSnap = await getDocs(collection(db, 'schools', id, 'terms'));
+    if (termSnap.size > 0) {
+      alert('Cannot delete school with terms. Archive instead.');
+      return;
     }
-    list.appendChild(li);
-  }
-  if (schoolSelects.length) {
-    schoolSelects.forEach(sel => {
-      if (sel.options.length > 1 && !sel.value) sel.value = sel.options[1].value;
-    });
-    const selected = document.getElementById('school-select-2')?.value;
-    if (selected) {
-      await populateTermOptions(selected, 'term-select');
-      await listTerms(selected);
-    }
-  }
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!confirmTyped('Delete school', 'DELETE', data.name)) return;
+    await deleteDoc(doc(db, 'schools', id));
+    await listSchoolsForTeacher(uid);
+  }));
+
+  list.querySelectorAll('.archive-link').forEach(el => el.addEventListener('click', async e => {
+    e.stopPropagation();
+    const id = e.target.dataset.id;
+    const data = schoolCache.get(id);
+    if (data.ownerUid !== uid) return;
+    const msg = data.archived ? `Unarchive ${data.name}?` : `Archive ${data.name}?`;
+    if (!confirm(msg)) return;
+    await updateDoc(doc(db, 'schools', id), { archived: !data.archived });
+    await listSchoolsForTeacher(uid);
+  }));
 }
 
-async function joinSchool(schoolId) {
-  const uid = auth.currentUser.uid;
-  await setDoc(doc(db, 'schools', schoolId, 'teachers', uid), { joinedAt: Date.now() });
-}
-
-async function fetchTerms(schoolId) {
-  const snap = await getDocs(collection(db, 'schools', schoolId, 'terms'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-}
-
-export async function listTerms(schoolId) {
-  const terms = await fetchTerms(schoolId);
+async function listTerms(schoolId) {
   const list = document.getElementById('term-list');
-  const select = document.getElementById('term-select');
   list.innerHTML = '';
-  select.innerHTML = "<option value=''>Select Term</option>";
-  const canArchive = auth.currentUser.uid === currentSchoolOwnerUid;
-  terms.forEach(t => {
+  const snap = await getDocs(collection(db, 'schools', schoolId, 'terms'));
+  snap.docs.forEach(tDoc => {
+    const t = tDoc.data();
+    const id = tDoc.id;
     const li = document.createElement('li');
     li.className = 'row';
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'name';
-    nameSpan.textContent = t.name + (t.archived ? ' (Archived)' : '');
-    const archiveSpan = document.createElement('span');
-    archiveSpan.className = 'archive-link';
-    archiveSpan.textContent = t.archived ? 'Unarchive' : 'Archive';
-    if (!canArchive) {
-      archiveSpan.classList.add('disabled');
-      archiveSpan.title = 'Only owner can archive';
-    } else {
-      archiveSpan.addEventListener('click', async e => {
-        e.stopPropagation();
-        const msg = t.archived ? `Are you sure you want to unarchive ${t.name}?` : `Are you sure you want to archive ${t.name}?`;
-        if (!confirm(msg)) return;
-        await archiveDoc(doc(db, 'schools', schoolId, 'terms', t.id), !t.archived);
-        await listTerms(schoolId);
-      });
-    }
-    nameSpan.addEventListener('click', async () => {
-      window.currentSelection.termId = t.id;
-      window.currentSelection.classId = null;
-      document.getElementById('term-select').value = t.id;
-      toggle(document.getElementById('toggle-class-form'), true);
-      toggle(document.getElementById('create-class-form'), true);
-      await listClasses(schoolId, t.id);
-    });
-    li.append(nameSpan, archiveSpan);
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.dataset.id = id;
+    name.textContent = t.name + (t.archived ? ' (Archived)' : '');
+
+    const actions = document.createElement('span');
+    actions.className = 'actions';
+
+    const edit = document.createElement('span');
+    edit.className = 'link-btn edit-term';
+    edit.dataset.id = id;
+    edit.textContent = 'Edit';
+
+    const del = document.createElement('span');
+    del.className = 'danger-link delete-term';
+    del.dataset.id = id;
+    del.textContent = 'Delete';
+
+    const arch = document.createElement('span');
+    arch.className = 'archive-link';
+    arch.dataset.id = id;
+    arch.textContent = t.archived ? 'Unarchive' : 'Archive';
+
+    actions.append(edit, del, arch);
+    li.append(name, actions);
     list.appendChild(li);
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.textContent = t.name;
-    select.appendChild(opt);
   });
-  document.getElementById('class-list').innerHTML = '';
-  const classSelect = document.getElementById('class-select');
-  if (classSelect) classSelect.innerHTML = "<option value=''>Select Class</option>";
-  return terms;
+
+  list.querySelectorAll('.name').forEach(el => el.addEventListener('click', async e => {
+    const termId = e.target.dataset.id;
+    window.currentSelection.termId = termId;
+    window.currentSelection.classId = null;
+    toggle(document.getElementById('classes-section'), true);
+    toggle(document.getElementById('create-class-form'), false);
+    await listClasses(window.currentSelection.schoolId, termId);
+  }));
+
+  list.querySelectorAll('.edit-term').forEach(el => el.addEventListener('click', async e => {
+    e.stopPropagation();
+    const termId = e.target.dataset.id;
+    const tDoc = await getDoc(doc(db, 'schools', schoolId, 'terms', termId));
+    const t = tDoc.data();
+    if (!confirmTyped('Edit term', 'EDITE', t.name)) return;
+    const name = prompt('Term Name:', t.name) || t.name;
+    const schoolYear = prompt('School Year:', t.schoolYear || '') || t.schoolYear || '';
+    await updateDoc(doc(db, 'schools', schoolId, 'terms', termId), { name, schoolYear });
+    await listTerms(schoolId);
+  }));
+
+  list.querySelectorAll('.delete-term').forEach(el => el.addEventListener('click', async e => {
+    e.stopPropagation();
+    const termId = e.target.dataset.id;
+    const tDoc = await getDoc(doc(db, 'schools', schoolId, 'terms', termId));
+    const t = tDoc.data();
+    const classSnap = await getDocs(collection(db, 'schools', schoolId, 'terms', termId, 'classes'));
+    if (classSnap.size > 0) {
+      alert('Cannot delete term with classes. Archive instead.');
+      return;
+    }
+    if (!confirmTyped('Delete term', 'DELETE', t.name)) return;
+    await deleteDoc(doc(db, 'schools', schoolId, 'terms', termId));
+    await listTerms(schoolId);
+  }));
+
+  list.querySelectorAll('.archive-link').forEach(el => el.addEventListener('click', async e => {
+    e.stopPropagation();
+    const termId = e.target.dataset.id;
+    const tDoc = await getDoc(doc(db, 'schools', schoolId, 'terms', termId));
+    const t = tDoc.data();
+    if (!confirm(`Archive status for ${t.name}?`)) return;
+    await updateDoc(doc(db, 'schools', schoolId, 'terms', termId), { archived: !t.archived });
+    await listTerms(schoolId);
+  }));
 }
 
-async function fetchClasses(schoolId, termId) {
-  const snap = await getDocs(collection(db, 'schools', schoolId, 'terms', termId, 'classes'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-}
-
-export async function listClasses(schoolId, termId) {
-  const classes = await fetchClasses(schoolId, termId);
+async function listClasses(schoolId, termId) {
   const list = document.getElementById('class-list');
-  const select = document.getElementById('class-select');
   list.innerHTML = '';
-  if (select) select.innerHTML = "<option value=''>Select Class</option>";
-  const uid = auth.currentUser.uid;
-  classes.forEach(c => {
+  const snap = await getDocs(collection(db, 'schools', schoolId, 'terms', termId, 'classes'));
+  snap.docs.forEach(cDoc => {
+    const c = cDoc.data();
+    const id = cDoc.id;
     const li = document.createElement('li');
     li.className = 'row';
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'name';
-    nameSpan.textContent = c.name + (c.archived ? ' (Archived)' : '');
-    const archiveSpan = document.createElement('span');
-    archiveSpan.className = 'archive-link';
-    archiveSpan.textContent = c.archived ? 'Unarchive' : 'Archive';
-    const canArchive = uid === currentSchoolOwnerUid || c.teacherUid === uid;
-    if (!canArchive) {
-      archiveSpan.classList.add('disabled');
-      archiveSpan.title = 'Only owner or class teacher can archive';
-    } else {
-      archiveSpan.addEventListener('click', async e => {
-        e.stopPropagation();
-        const msg = c.archived ? `Are you sure you want to unarchive ${c.name}?` : `Are you sure you want to archive ${c.name}?`;
-        if (!confirm(msg)) return;
-        await archiveDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', c.id), !c.archived);
-        await listClasses(schoolId, termId);
-      });
-    }
-    nameSpan.addEventListener('click', async () => {
-      window.currentSelection.classId = c.id;
-      if (select) select.value = c.id;
-      window.dispatchEvent(new CustomEvent('class-selected', { detail: window.currentSelection }));
-      await listRoster(schoolId, termId, c.id);
-    });
-    li.append(nameSpan, archiveSpan);
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.dataset.id = id;
+    name.textContent = c.name + (c.archived ? ' (Archived)' : '');
+
+    const actions = document.createElement('span');
+    actions.className = 'actions';
+
+    const edit = document.createElement('span');
+    edit.className = 'link-btn edit-class';
+    edit.dataset.id = id;
+    edit.textContent = 'Edit';
+
+    const del = document.createElement('span');
+    del.className = 'danger-link delete-class';
+    del.dataset.id = id;
+    del.textContent = 'Delete';
+
+    const arch = document.createElement('span');
+    arch.className = 'archive-link';
+    arch.dataset.id = id;
+    arch.textContent = c.archived ? 'Unarchive' : 'Archive';
+
+    actions.append(edit, del, arch);
+    li.append(name, actions);
     list.appendChild(li);
-    if (select) {
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = c.name;
-      select.appendChild(opt);
-    }
   });
-  return classes;
+
+  list.querySelectorAll('.name').forEach(el => el.addEventListener('click', async e => {
+    const classId = e.target.dataset.id;
+    window.currentSelection.classId = classId;
+    window.dispatchEvent(new CustomEvent('class-selected', { detail: window.currentSelection }));
+    await listRoster(schoolId, termId, classId);
+    toggle(document.getElementById('add-student-form'), true);
+    toggle(document.getElementById('roster-table'), true);
+    toggle(document.getElementById('encoder-card'), true);
+    const form = document.getElementById('add-student-form');
+    if (form) form.scrollIntoView({ behavior: 'smooth' });
+  }));
+
+  list.querySelectorAll('.edit-class').forEach(el => el.addEventListener('click', async e => {
+    e.stopPropagation();
+    const classId = e.target.dataset.id;
+    const cDoc = await getDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId));
+    const c = cDoc.data();
+    if (!confirmTyped('Edit class', 'EDITE', c.name)) return;
+    const name = prompt('Class Name:', c.name) || c.name;
+    const gradeLevel = prompt('Grade Level:', c.gradeLevel || '') || c.gradeLevel || '';
+    const section = prompt('Section:', c.section || '') || c.section || '';
+    const subject = prompt('Subject:', c.subject || '') || c.subject || '';
+    await updateDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId), { name, gradeLevel, section, subject });
+    await listClasses(schoolId, termId);
+  }));
+
+  list.querySelectorAll('.delete-class').forEach(el => el.addEventListener('click', async e => {
+    e.stopPropagation();
+    const classId = e.target.dataset.id;
+    const cDoc = await getDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId));
+    const c = cDoc.data();
+    const rosterSnap = await getDocs(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'roster'));
+    const scoreDoc = await getDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'scores', auth.currentUser.uid));
+    if (rosterSnap.size > 0 || scoreDoc.exists()) {
+      alert('Cannot delete class with roster or scores. Archive instead.');
+      return;
+    }
+    if (!confirmTyped('Delete class', 'DELETE', c.name)) return;
+    await deleteDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId));
+    await listClasses(schoolId, termId);
+  }));
+
+  list.querySelectorAll('.archive-link').forEach(el => el.addEventListener('click', async e => {
+    e.stopPropagation();
+    const classId = e.target.dataset.id;
+    const cDoc = await getDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId));
+    const c = cDoc.data();
+    if (!confirm(`Archive status for ${c.name}?`)) return;
+    await updateDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId), { archived: !c.archived });
+    await listClasses(schoolId, termId);
+  }));
 }
 
 async function listRoster(schoolId, termId, classId) {
   // Placeholder for roster rendering handled elsewhere
-}
-
-async function populateTermOptions(schoolId, selectId) {
-  const select = document.getElementById(selectId);
-  select.innerHTML = '<option value="">Select Term</option>';
-  if (!schoolId) return;
-  const terms = await fetchTerms(schoolId);
-  terms.forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.textContent = t.name;
-    select.appendChild(opt);
-  });
 }
 
 onAuthStateChanged(auth, async user => {
@@ -335,10 +348,11 @@ onAuthStateChanged(auth, async user => {
     return;
   }
   await listSchoolsForTeacher(user.uid);
-  toggle(document.getElementById('toggle-term-form'), false);
-  toggle(document.getElementById('create-term-form'), false);
-  toggle(document.getElementById('toggle-class-form'), false);
-  toggle(document.getElementById('create-class-form'), false);
+  toggle(document.getElementById('terms-section'), false);
+  toggle(document.getElementById('classes-section'), false);
+  toggle(document.getElementById('add-student-form'), false);
+  toggle(document.getElementById('roster-table'), false);
+  toggle(document.getElementById('encoder-card'), false);
 });
 
 document.getElementById('create-school-form').addEventListener('submit', async e => {
@@ -352,120 +366,51 @@ document.getElementById('create-school-form').addEventListener('submit', async e
   try {
     const user = auth.currentUser;
     if (!user) { alert('Only teachers can create schools'); return; }
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    if (!userDoc.exists() || userDoc.data().role !== 'teacher') {
-      alert('Only teachers can create schools');
-      return;
-    }
     await createSchool(user.uid, data);
-    alert('School created');
     e.target.reset();
-    listSchoolsForTeacher(auth.currentUser.uid);
+    await listSchoolsForTeacher(user.uid);
     window.dispatchEvent(new Event('refresh-class-tree'));
-  } catch (err) {
-    alert(err.message);
-  }
+  } catch (err) { alert(err.message); }
 });
 
 document.getElementById('create-term-form').addEventListener('submit', async e => {
   e.preventDefault();
-  const schoolId = document.getElementById('school-select').value;
-  const data = {
-    schoolYear: getVal('school-year'),
-    name: getVal('term-name')
-  };
+  const schoolId = window.currentSelection.schoolId;
+  const data = { schoolYear: getVal('school-year'), name: getVal('term-name') };
   if (!schoolId || !data.schoolYear || !data.name) { alert('Fill required fields'); return; }
   try {
     await createTerm(schoolId, data);
-    alert('Term created');
     e.target.reset();
+    toggle(document.getElementById('create-term-form'), false);
     await listTerms(schoolId);
     window.dispatchEvent(new Event('refresh-class-tree'));
-  } catch (err) {
-    alert(err.message);
-  }
+  } catch (err) { alert(err.message); }
 });
 
 document.getElementById('create-class-form').addEventListener('submit', async e => {
   e.preventDefault();
-  const schoolId = document.getElementById('school-select-2').value;
-  const termId = document.getElementById('term-select').value;
+  const { schoolId, termId } = window.currentSelection;
   const data = {
-    className: getVal('class-name'),
+    name: getVal('class-name'),
     gradeLevel: getVal('grade-level'),
     section: getVal('section'),
     subject: getVal('subject')
   };
-  if (!schoolId || !termId || !data.className || !data.gradeLevel || !data.section || !data.subject) { alert('Fill required fields'); return; }
+  if (!schoolId || !termId || !data.name || !data.gradeLevel || !data.section || !data.subject) { alert('Fill required fields'); return; }
   try {
-    const combined = `${data.gradeLevel} - ${data.section} - ${data.subject} - ${data.className}`;
-    await createClass(schoolId, termId, { name: combined, gradeLevel: data.gradeLevel, section: data.section, subject: data.subject, classCode: data.className });
-    alert('Class created');
+    await createClass(schoolId, termId, { name: `${data.gradeLevel} - ${data.section} - ${data.subject} - ${data.name}`, gradeLevel: data.gradeLevel, section: data.section, subject: data.subject, classCode: data.name });
     e.target.reset();
+    toggle(document.getElementById('create-class-form'), false);
     await listClasses(schoolId, termId);
     window.dispatchEvent(new Event('refresh-class-tree'));
-  } catch (err) {
-    alert(err.message);
-  }
+  } catch (err) { alert(err.message); }
 });
 
-document.getElementById('school-select').addEventListener('change', async e => {
-  const schoolId = e.target.value || null;
-  window.currentSelection = { schoolId, termId: null, classId: null };
-  currentSchoolOwnerUid = schoolId ? (schoolCache.get(schoolId)?.ownerUid || null) : null;
-  const sel2 = document.getElementById('school-select-2');
-  if (sel2) sel2.value = schoolId || '';
-  toggle(document.getElementById('toggle-term-form'), !!schoolId);
-  toggle(document.getElementById('create-term-form'), !!schoolId);
-  toggle(document.getElementById('toggle-class-form'), false);
-  toggle(document.getElementById('create-class-form'), false);
-  if (schoolId) {
-    await listTerms(schoolId);
-  } else {
-    document.getElementById('term-list').innerHTML = '';
-    document.getElementById('class-list').innerHTML = '';
-    document.getElementById('term-select').innerHTML = "<option value=''>Select Term</option>";
-    const classSelect = document.getElementById('class-select');
-    if (classSelect) classSelect.innerHTML = "<option value=''>Select Class</option>";
-  }
+document.getElementById('show-create-term').addEventListener('click', () => {
+  toggle(document.getElementById('create-term-form'), true);
 });
 
-document.getElementById('term-select').addEventListener('change', async e => {
-  const termId = e.target.value || null;
-  const schoolId = window.currentSelection.schoolId;
-  window.currentSelection.termId = termId;
-  window.currentSelection.classId = null;
-  const classSelect = document.getElementById('class-select');
-  if (classSelect) classSelect.value = '';
-  toggle(document.getElementById('toggle-class-form'), !!termId);
-  toggle(document.getElementById('create-class-form'), !!termId);
-  if (schoolId && termId) {
-    await listClasses(schoolId, termId);
-  } else {
-    document.getElementById('class-list').innerHTML = '';
-    if (classSelect) classSelect.innerHTML = "<option value=''>Select Class</option>";
-  }
+document.getElementById('show-create-class').addEventListener('click', () => {
+  toggle(document.getElementById('create-class-form'), true);
 });
 
-document.getElementById('class-select').addEventListener('change', async e => {
-  const classId = e.target.value || null;
-  const { schoolId, termId } = window.currentSelection;
-  window.currentSelection.classId = classId;
-  if (schoolId && termId && classId) {
-    window.dispatchEvent(new CustomEvent('class-selected', { detail: window.currentSelection }));
-    await listRoster(schoolId, termId, classId);
-  }
-});
-
-document.getElementById('toggle-school-form').addEventListener('click', () => {
-  const form = document.getElementById('create-school-form');
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
-});
-document.getElementById('toggle-term-form').addEventListener('click', () => {
-  const form = document.getElementById('create-term-form');
-  form.classList.toggle('hidden');
-});
-document.getElementById('toggle-class-form').addEventListener('click', () => {
-  const form = document.getElementById('create-class-form');
-  form.classList.toggle('hidden');
-});
