@@ -32,13 +32,17 @@
     </form>
 
     <h3>Schools</h3>
+    <div class="section-actions"><span id="show-all-schools" class="muted-link hidden">Show all schools</span></div>
     <ul id="school-list"></ul>
 
     <!-- Terms section appears only after selecting a school -->
     <div id="terms-section" class="hidden">
-      <div class="section-header">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
         <h3>Terms</h3>
-        <button id="show-create-term" type="button" class="link-btn">+ New Term</button>
+        <div class="section-actions">
+          <span id="show-all-terms" class="muted-link hidden">Show all terms</span>
+          <button id="show-create-term" type="button" class="link-btn">+ New Term</button>
+        </div>
       </div>
       <form id="create-term-form" class="hidden">
         <input id="school-year" placeholder="School Year" required>
@@ -50,9 +54,11 @@
 
     <!-- Classes section appears only after selecting a term -->
     <div id="classes-section" class="hidden">
-      <div class="section-header">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
         <h3>Classes</h3>
-        <button id="show-create-class" type="button" class="link-btn">+ New Class</button>
+        <div class="section-actions">
+          <button id="show-create-class" type="button" class="link-btn">+ New Class</button>
+        </div>
       </div>
       <form id="create-class-form" class="hidden">
         <input id="class-name" placeholder="Class Name" required>

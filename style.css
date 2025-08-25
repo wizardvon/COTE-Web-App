@@ -112,6 +112,8 @@ button:hover {
 .muted { color: #9aa0a6; }
 .muted-link { color: #9aa0a6; cursor: pointer; }
 .muted-link:hover { text-decoration: underline; }
+.small-note { font-size: .9rem; color:#9aa0a6; }
+.section-actions { display:flex; justify-content:flex-end; gap:12px; }
 
 table {
   width: 100%;

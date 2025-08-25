@@ -39,7 +39,7 @@ export async function createTerm(schoolId, data) {
   const existing = await getDocs(collection(db, 'schools', schoolId, 'terms'));
   const duplicate = existing.docs.some(d => {
     const t = d.data();
-    return t.schoolYear === data.schoolYear && t.name.toLowerCase() === data.name.toLowerCase();
+    return t.schoolYear === data.schoolYear && t.termLabel === data.termLabel;
   });
   if (duplicate) throw new Error('School year and term already exist');
   const ref = doc(collection(db, 'schools', schoolId, 'terms'));
@@ -61,6 +61,8 @@ async function listSchoolsForTeacher(uid) {
   const list = document.getElementById('school-list');
   list.innerHTML = '';
   schoolCache.clear();
+  const showAll = document.getElementById('show-all-schools');
+  toggle(showAll, false);
 
   const snap = await getDocs(collection(db, 'schools'));
   for (const sDoc of snap.docs) {
@@ -115,11 +117,19 @@ async function listSchoolsForTeacher(uid) {
     const id = e.target.dataset.id;
     const data = schoolCache.get(id);
     window.currentSelection = { schoolId: id, termId: null, classId: null, ownerUid: data.ownerUid };
+    const selectedLi = e.target.closest('li');
+    list.querySelectorAll('li').forEach(li => { if (li !== selectedLi) li.classList.add('hidden'); else li.classList.remove('hidden'); });
+    toggle(showAll, true);
     toggle(document.getElementById('terms-section'), true);
     toggle(document.getElementById('classes-section'), false);
     toggle(document.getElementById('create-term-form'), false);
     await listTerms(id);
   }));
+
+  showAll.onclick = () => {
+    list.querySelectorAll('li').forEach(li => li.classList.remove('hidden'));
+    toggle(showAll, false);
+  };
 
   list.querySelectorAll('.edit-school').forEach(el => el.addEventListener('click', async e => {
     e.stopPropagation();
@@ -162,6 +172,8 @@ async function listSchoolsForTeacher(uid) {
 async function listTerms(schoolId) {
   const list = document.getElementById('term-list');
   list.innerHTML = '';
+  const showAll = document.getElementById('show-all-terms');
+  toggle(showAll, false);
   const snap = await getDocs(collection(db, 'schools', schoolId, 'terms'));
   snap.docs.forEach(tDoc => {
     const t = tDoc.data();
@@ -200,10 +212,18 @@ async function listTerms(schoolId) {
     const termId = e.target.dataset.id;
     window.currentSelection.termId = termId;
     window.currentSelection.classId = null;
+    const selectedLi = e.target.closest('li');
+    list.querySelectorAll('li').forEach(li => { if (li !== selectedLi) li.classList.add('hidden'); else li.classList.remove('hidden'); });
+    toggle(showAll, true);
     toggle(document.getElementById('classes-section'), true);
     toggle(document.getElementById('create-class-form'), false);
     await listClasses(window.currentSelection.schoolId, termId);
   }));
+
+  showAll.onclick = () => {
+    list.querySelectorAll('li').forEach(li => li.classList.remove('hidden'));
+    toggle(showAll, false);
+  };
 
   list.querySelectorAll('.edit-term').forEach(el => el.addEventListener('click', async e => {
     e.stopPropagation();
@@ -211,9 +231,10 @@ async function listTerms(schoolId) {
     const tDoc = await getDoc(doc(db, 'schools', schoolId, 'terms', termId));
     const t = tDoc.data();
     if (!confirmTyped('Edit term', 'EDITE', t.name)) return;
-    const name = prompt('Term Name:', t.name) || t.name;
     const schoolYear = prompt('School Year:', t.schoolYear || '') || t.schoolYear || '';
-    await updateDoc(doc(db, 'schools', schoolId, 'terms', termId), { name, schoolYear });
+    const termLabel = prompt('Term Name:', t.termLabel || '') || t.termLabel || '';
+    const name = `S.Y.${schoolYear} | ${termLabel}`;
+    await updateDoc(doc(db, 'schools', schoolId, 'terms', termId), { name, schoolYear, termLabel });
     await listTerms(schoolId);
   }));
 
@@ -247,14 +268,14 @@ async function listClasses(schoolId, termId) {
   const list = document.getElementById('class-list');
   list.innerHTML = '';
   const snap = await getDocs(collection(db, 'schools', schoolId, 'terms', termId, 'classes'));
-  snap.docs.forEach(cDoc => {
-    const c = cDoc.data();
-    const id = cDoc.id;
+  const classes = snap.docs.map(cDoc => ({ id: cDoc.id, ...cDoc.data() }));
+  classes.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  classes.forEach(c => {
     const li = document.createElement('li');
     li.className = 'row';
     const name = document.createElement('span');
     name.className = 'name';
-    name.dataset.id = id;
+    name.dataset.id = c.id;
     name.textContent = c.name + (c.archived ? ' (Archived)' : '');
 
     const actions = document.createElement('span');
@@ -262,17 +283,17 @@ async function listClasses(schoolId, termId) {
 
     const edit = document.createElement('span');
     edit.className = 'link-btn edit-class';
-    edit.dataset.id = id;
+    edit.dataset.id = c.id;
     edit.textContent = 'Edit';
 
     const del = document.createElement('span');
     del.className = 'danger-link delete-class';
-    del.dataset.id = id;
+    del.dataset.id = c.id;
     del.textContent = 'Delete';
 
     const arch = document.createElement('span');
     arch.className = 'archive-link';
-    arch.dataset.id = id;
+    arch.dataset.id = c.id;
     arch.textContent = c.archived ? 'Unarchive' : 'Archive';
 
     actions.append(edit, del, arch);
@@ -362,10 +383,12 @@ document.getElementById('create-school-form').addEventListener('submit', async e
 document.getElementById('create-term-form').addEventListener('submit', async e => {
   e.preventDefault();
   const schoolId = window.currentSelection.schoolId;
-  const data = { schoolYear: getVal('school-year'), name: getVal('term-name') };
-  if (!schoolId || !data.schoolYear || !data.name) { alert('Fill required fields'); return; }
+  const sy = getVal('school-year');
+  const termLabel = getVal('term-name');
+  if (!schoolId || !sy || !termLabel) { alert('Fill required fields'); return; }
   try {
-    await createTerm(schoolId, data);
+    const combined = `S.Y.${sy} | ${termLabel}`;
+    await createTerm(schoolId, { name: combined, schoolYear: sy, termLabel });
     e.target.reset();
     toggle(document.getElementById('create-term-form'), false);
     await listTerms(schoolId);

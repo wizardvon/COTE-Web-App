@@ -22,20 +22,15 @@
   </nav>
 
   <p><a href="teacher.html" class="link-btn">&larr; Back to Admin</a></p>
-  <h2>Class Score Manager</h2>
-  <p id="class-info" class="muted"></p>
-
   <div class="card">
-    <h3>Roster &amp; Scores</h3>
+    <h2>Class Score Manager</h2>
+    <p class="small-note" id="class-path"></p>
+
     <form id="add-student-form">
       <input id="student-name" placeholder="Student Name" required>
       <input id="student-lrn" placeholder="LRN" required>
       <input id="student-birthdate" type="date" required>
-      <select id="student-sex" required>
-        <option value="">Sex</option>
-        <option value="M">M</option>
-        <option value="F">F</option>
-      </select>
+      <select id="student-sex" required><option value="">Sex</option><option value="M">M</option><option value="F">F</option></select>
       <input id="student-email" placeholder="Email (optional)">
       <input id="guardian-contact" placeholder="Guardian Contact (optional)">
       <button type="submit">Add Student</button>
@@ -52,7 +47,7 @@
             <th id="demerit-group" colspan="2">Demerit</th>
           </tr>
           <tr id="sub-header">
-            <th>Student Name</th>
+            <th>Name</th>
             <th>LRN</th>
             <th>Birthdate</th>
             <th>Sex</th>
@@ -76,6 +71,7 @@
         <tbody id="scores-body"></tbody>
       </table>
     </div>
+
     <div class="action-buttons">
       <button id="save">Save</button>
       <button id="download">Download CSV</button>
