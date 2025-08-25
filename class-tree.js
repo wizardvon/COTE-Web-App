@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDtaaCxT9tYXPwX3Pvoh_5pJosdmI1KEkM",
@@ -44,15 +44,33 @@ async function buildClassTree(uid, selectedSchoolId = null) {
 
   for (const school of schoolDocs) {
     const schoolLi = document.createElement('li');
-    schoolLi.textContent = '\u25B6 ' + school.data.name;
+    const schoolHeader = document.createElement('span');
+    schoolHeader.textContent = '\u25B6 ' + school.data.name;
+    schoolLi.appendChild(schoolHeader);
     const yearUl = document.createElement('ul');
     yearUl.style.display = 'none';
     schoolLi.appendChild(yearUl);
-    schoolLi.addEventListener('click', () => {
+
+    schoolHeader.addEventListener('click', () => {
       const expanded = yearUl.style.display === 'none';
       yearUl.style.display = expanded ? 'block' : 'none';
-      schoolLi.textContent = `${expanded ? '\u25BC' : '\u25B6'} ${school.data.name}`;
+      schoolHeader.textContent = `${expanded ? '\u25BC' : '\u25B6'} ${school.data.name}`;
     });
+
+    const isOwner = school.data.ownerUid === uid;
+    const memberDoc = await getDoc(doc(db, 'schools', school.id, 'teachers', uid));
+    if (!isOwner && !memberDoc.exists()) {
+      const joinBtn = document.createElement('button');
+      joinBtn.textContent = 'Join';
+      joinBtn.addEventListener('click', async e => {
+        e.stopPropagation();
+        await setDoc(doc(db, 'schools', school.id, 'teachers', uid), { joinedAt: Date.now() });
+        buildClassTree(uid, selectedSchoolId);
+        window.dispatchEvent(new Event('refresh-class-tree'));
+      });
+      schoolLi.insertBefore(joinBtn, yearUl);
+    }
+
     tree.appendChild(schoolLi);
 
     const termsSnap = await getDocs(collection(db, 'schools', school.id, 'terms'));
@@ -64,25 +82,29 @@ async function buildClassTree(uid, selectedSchoolId = null) {
     });
     Object.entries(byYear).forEach(([year, termArr]) => {
       const yearLi = document.createElement('li');
-      yearLi.textContent = '\u25B6 ' + year;
+      const yearHeader = document.createElement('span');
+      yearHeader.textContent = '\u25B6 ' + year;
+      yearLi.appendChild(yearHeader);
       const termUl = document.createElement('ul');
       termUl.style.display = 'none';
       yearLi.appendChild(termUl);
-      yearLi.addEventListener('click', e => {
+      yearHeader.addEventListener('click', e => {
         e.stopPropagation();
         const expanded = termUl.style.display === 'none';
         termUl.style.display = expanded ? 'block' : 'none';
-        yearLi.textContent = `${expanded ? '\u25BC' : '\u25B6'} ${year}`;
+        yearHeader.textContent = `${expanded ? '\u25BC' : '\u25B6'} ${year}`;
       });
       yearUl.appendChild(yearLi);
 
       termArr.forEach(term => {
         const termLi = document.createElement('li');
-        termLi.textContent = '\u25B6 ' + term.name;
+        const termHeader = document.createElement('span');
+        termHeader.textContent = '\u25B6 ' + term.name;
+        termLi.appendChild(termHeader);
         const classUl = document.createElement('ul');
         classUl.style.display = 'none';
         termLi.appendChild(classUl);
-        termLi.addEventListener('click', async e => {
+        termHeader.addEventListener('click', async e => {
           e.stopPropagation();
           if (classUl.childElementCount === 0) {
             const classesSnap = await getDocs(collection(db, 'schools', school.id, 'terms', term.id, 'classes'));
@@ -98,7 +120,7 @@ async function buildClassTree(uid, selectedSchoolId = null) {
           }
           const expanded = classUl.style.display === 'none';
           classUl.style.display = expanded ? 'block' : 'none';
-          termLi.textContent = `${expanded ? '\u25BC' : '\u25B6'} ${term.name}`;
+          termHeader.textContent = `${expanded ? '\u25BC' : '\u25B6'} ${term.name}`;
         });
         termUl.appendChild(termLi);
       });
