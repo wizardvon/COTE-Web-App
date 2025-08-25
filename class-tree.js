@@ -23,9 +23,7 @@ async function buildClassTree(uid) {
   const schoolsSnap = await getDocs(collection(db, 'schools'));
   for (const schoolDoc of schoolsSnap.docs) {
     const schoolData = schoolDoc.data();
-    const isOwner = schoolData.ownerUid === uid;
-    const memberDoc = await getDoc(doc(db, 'schools', schoolDoc.id, 'teachers', uid));
-    if (!isOwner && !memberDoc.exists()) continue;
+    // Show all schools regardless of membership so teachers can view existing ones
     const schoolLi = document.createElement('li');
     schoolLi.textContent = schoolData.name;
     const yearUl = document.createElement('ul');

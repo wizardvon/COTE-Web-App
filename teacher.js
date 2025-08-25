@@ -28,6 +28,9 @@ window.addEventListener('class-selected', e => {
 });
 
 export async function createSchool(name) {
+  const existing = await getDocs(collection(db, 'schools'));
+  const duplicate = existing.docs.some(d => d.data().name.toLowerCase() === name.toLowerCase());
+  if (duplicate) { alert('School already exists'); return null; }
   const ref = doc(collection(db, 'schools'));
   await setDoc(ref, { name, ownerUid: auth.currentUser.uid });
   alert('School created');
@@ -35,6 +38,9 @@ export async function createSchool(name) {
 }
 
 export async function createTerm(schoolId, { name, startDate, endDate }) {
+  const existing = await getDocs(collection(db, 'schools', schoolId, 'terms'));
+  const duplicate = existing.docs.some(d => d.data().name.toLowerCase() === name.toLowerCase());
+  if (duplicate) { alert('Term already exists'); return null; }
   const ref = doc(collection(db, 'schools', schoolId, 'terms'));
   await setDoc(ref, { name, startDate, endDate });
   alert('Term created');

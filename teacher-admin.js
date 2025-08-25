@@ -18,12 +18,21 @@ const db = getFirestore(app);
 
 function getVal(id) { return document.getElementById(id).value.trim(); }
 export async function createSchool(ownerUid, data) {
+  const existing = await getDocs(collection(db, 'schools'));
+  const duplicate = existing.docs.some(d => d.data().name.toLowerCase() === data.name.toLowerCase());
+  if (duplicate) throw new Error('School already exists');
   const ref = doc(collection(db, 'schools'));
   await setDoc(ref, { ...data, ownerUid, createdAt: Date.now(), archived: false });
   return ref.id;
 }
 
 export async function createTerm(schoolId, data) {
+  const existing = await getDocs(collection(db, 'schools', schoolId, 'terms'));
+  const duplicate = existing.docs.some(d => {
+    const term = d.data();
+    return term.schoolYear === data.schoolYear && term.name.toLowerCase() === data.name.toLowerCase();
+  });
+  if (duplicate) throw new Error('School year and term already exist');
   const ref = doc(collection(db, 'schools', schoolId, 'terms'));
   await setDoc(ref, { ...data, createdAt: Date.now(), archived: false });
   return ref.id;
