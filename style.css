@@ -208,6 +208,33 @@ th, td {
   z-index: 2;
 }
 
+#class-tree li,
+#school-list li,
+#term-list li,
+#class-list li {
+  cursor: pointer;
+  padding: 4px;
+  margin: 2px 0;
+  background-color: #2a2a2a;
+  border-radius: 4px;
+}
+
+#class-tree li:hover,
+#school-list li:hover,
+#term-list li:hover,
+#class-list li:hover {
+  background-color: #333;
+}
+
+#class-tree .back-link {
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+#class-tree .back-link:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 600px) {
   .navbar {
     flex-direction: column;
