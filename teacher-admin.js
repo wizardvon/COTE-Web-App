@@ -280,16 +280,10 @@ async function listClasses(schoolId, termId) {
     list.appendChild(li);
   });
 
-  list.querySelectorAll('.name').forEach(el => el.addEventListener('click', async e => {
+  list.querySelectorAll('.name').forEach(el => el.addEventListener('click', e => {
     const classId = e.target.dataset.id;
-    window.currentSelection.classId = classId;
-    window.dispatchEvent(new CustomEvent('class-selected', { detail: window.currentSelection }));
-    await listRoster(schoolId, termId, classId);
-    toggle(document.getElementById('add-student-form'), true);
-    toggle(document.getElementById('roster-table'), true);
-    toggle(document.getElementById('encoder-card'), true);
-    const form = document.getElementById('add-student-form');
-    if (form) form.scrollIntoView({ behavior: 'smooth' });
+    const url = `teacher-score.html?schoolId=${schoolId}&termId=${termId}&classId=${classId}`;
+    window.location.href = url;
   }));
 
   list.querySelectorAll('.edit-class').forEach(el => el.addEventListener('click', async e => {
@@ -313,13 +307,13 @@ async function listClasses(schoolId, termId) {
     const c = cDoc.data();
     const rosterSnap = await getDocs(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'roster'));
     const scoreDoc = await getDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'scores', auth.currentUser.uid));
-    if (rosterSnap.size > 0 || scoreDoc.exists()) {
-      alert('Cannot delete class with roster or scores. Archive instead.');
-      return;
+    if (rosterSnap.size === 0 && !scoreDoc.exists()) {
+      if (!confirmTyped('Delete class', 'DELETE', c.name)) return;
+      await deleteDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId));
+      await listClasses(schoolId, termId);
+    } else {
+      alert('Class has roster or scores. Please archive instead.');
     }
-    if (!confirmTyped('Delete class', 'DELETE', c.name)) return;
-    await deleteDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId));
-    await listClasses(schoolId, termId);
   }));
 
   list.querySelectorAll('.archive-link').forEach(el => el.addEventListener('click', async e => {
@@ -331,10 +325,6 @@ async function listClasses(schoolId, termId) {
     await updateDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId), { archived: !c.archived });
     await listClasses(schoolId, termId);
   }));
-}
-
-async function listRoster(schoolId, termId, classId) {
-  // Placeholder for roster rendering handled elsewhere
 }
 
 onAuthStateChanged(auth, async user => {
@@ -350,9 +340,6 @@ onAuthStateChanged(auth, async user => {
   await listSchoolsForTeacher(user.uid);
   toggle(document.getElementById('terms-section'), false);
   toggle(document.getElementById('classes-section'), false);
-  toggle(document.getElementById('add-student-form'), false);
-  toggle(document.getElementById('roster-table'), false);
-  toggle(document.getElementById('encoder-card'), false);
 });
 
 document.getElementById('create-school-form').addEventListener('submit', async e => {
@@ -369,7 +356,6 @@ document.getElementById('create-school-form').addEventListener('submit', async e
     await createSchool(user.uid, data);
     e.target.reset();
     await listSchoolsForTeacher(user.uid);
-    window.dispatchEvent(new Event('refresh-class-tree'));
   } catch (err) { alert(err.message); }
 });
 
@@ -383,7 +369,6 @@ document.getElementById('create-term-form').addEventListener('submit', async e =
     e.target.reset();
     toggle(document.getElementById('create-term-form'), false);
     await listTerms(schoolId);
-    window.dispatchEvent(new Event('refresh-class-tree'));
   } catch (err) { alert(err.message); }
 });
 
@@ -402,7 +387,6 @@ document.getElementById('create-class-form').addEventListener('submit', async e 
     e.target.reset();
     toggle(document.getElementById('create-class-form'), false);
     await listClasses(schoolId, termId);
-    window.dispatchEvent(new Event('refresh-class-tree'));
   } catch (err) { alert(err.message); }
 });
 

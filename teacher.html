@@ -64,17 +64,12 @@
       <ul id="class-list"></ul>
     </div>
   </div>
-  <div class="card">
-    <h2>Select a School</h2>
-    <ul id="class-tree"></ul>
-  </div>
   <script type="module">
     import { setupNav, requireLogin } from './auth.js';
     setupNav();
     requireLogin(['teacher']);
   </script>
   <script type="module" src="teacher-admin.js"></script>
-  <script type="module" src="class-tree.js"></script>
 </body>
 </html>
 
