@@ -33,7 +33,7 @@
     </form>
 
     <button id="toggle-term-form">Create Term</button>
-    <form id="create-term-form" style="display:none;">
+    <form id="create-term-form" class="hidden">
       <select id="school-select"></select>
       <input id="school-year" placeholder="School Year" required>
       <input id="term-name" placeholder="Term Name" required>
@@ -42,9 +42,10 @@
     <ul id="term-list"></ul>
 
     <button id="toggle-class-form">Create Class</button>
-    <form id="create-class-form" style="display:none;">
+    <form id="create-class-form" class="hidden">
       <select id="school-select-2"></select>
       <select id="term-select"></select>
+      <select id="class-select"></select>
       <input id="class-name" placeholder="Class Name" required>
       <input id="grade-level" placeholder="Grade Level" required>
       <input id="section" placeholder="Section" required>
