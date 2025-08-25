@@ -67,54 +67,9 @@
     </form>
     <table id="roster-table"></table>
   </div>
-  <div class="card teacher-card">
-    <h2>Teacher Score Encoder</h2>
-    <div class="table-container">
-      <table id="scores-table">
-        <thead>
-        <tr id="group-header">
-          <th colspan="4">Student Profile</th>
-          <th id="ww-group" colspan="2">Written Works</th>
-          <th id="pt-group" colspan="2">Performance Task</th>
-          <th id="merit-group" colspan="2">Merit</th>
-          <th id="demerit-group" colspan="2">Demerit</th>
-        </tr>
-        <tr id="sub-header">
-          <th>Student Name</th>
-          <th>LRN</th>
-          <th>Grade-Section</th>
-          <th>Class</th>
-          <th class="ww-header">W1</th>
-          <th id="ww-total-header">TW</th>
-          <th class="pt-header">PT1</th>
-          <th id="pt-total-header">TP</th>
-          <th class="merit-header">M1</th>
-          <th id="merit-total-header">TM</th>
-          <th class="demerit-header">D1</th>
-          <th id="demerit-total-header">TD</th>
-        </tr>
-        <tr id="max-row">
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th><input type="number" class="ww-max"></th>
-          <th id="ww-max-placeholder"></th>
-          <th><input type="number" class="pt-max"></th>
-          <th id="pt-max-placeholder"></th>
-          <th><input type="text" class="merit-label" maxlength="4"></th>
-          <th id="merit-max-placeholder"></th>
-          <th><input type="text" class="demerit-label" maxlength="4"></th>
-          <th id="demerit-max-placeholder"></th>
-        </tr>
-      </thead>
-      <tbody id="scores-body"></tbody>
-    </table>
-    </div>
-    <div class="action-buttons">
-      <button id="save">Save</button>
-      <button id="download">Download CSV</button>
-    </div>
+  <div class="card">
+    <h2>Classes</h2>
+    <ul id="class-tree"></ul>
   </div>
   <script type="module">
     import { setupNav, requireLogin } from './auth.js';
@@ -122,7 +77,7 @@
     requireLogin(['teacher']);
   </script>
   <script type="module" src="teacher-admin.js"></script>
-  <script type="module" src="teacher.js"></script>
+  <script type="module" src="class-tree.js"></script>
 </body>
 </html>
 

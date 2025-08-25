@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 // Replace with your Firebase configuration
 const firebaseConfig = {
@@ -93,6 +93,43 @@ function addRow() {
   row.innerHTML = cells;
   tbody.appendChild(row);
 
+  attachRowListeners(row);
+  updateRowTotals(row);
+  updateAddRowButton();
+}
+
+function addStudentRow(student, classInfo) {
+  const tbody = document.getElementById('scores-body');
+  const row = document.createElement('tr');
+  let cells = `
+    <td>${student.name || ''}</td>
+    <td>${student.lrn || ''}</td>
+    <td>${classInfo.gradeLevel || ''} - ${classInfo.section || ''}</td>
+    <td>${classInfo.subject || ''} - ${classInfo.classCode || ''}</td>
+  `;
+
+  for (let i = 0; i < wwCount; i++) {
+    cells += `<td><input type="number" class="ww-input"></td>`;
+  }
+  cells += `<td><input type="number" class="ww-total" readonly></td>`;
+
+  for (let i = 0; i < ptCount; i++) {
+    cells += `<td><input type="number" class="pt-input"></td>`;
+  }
+  cells += `<td><input type="number" class="pt-total" readonly></td>`;
+
+  for (let i = 0; i < meritCount; i++) {
+    cells += `<td><input type="number" class="merit-input"></td>`;
+  }
+  cells += `<td><input type="number" class="merit-total" readonly></td>`;
+
+  for (let i = 0; i < demeritCount; i++) {
+    cells += `<td><input type="number" class="demerit-input"></td>`;
+  }
+  cells += `<td><input type="number" class="demerit-total" readonly></td>`;
+
+  row.innerHTML = cells;
+  tbody.appendChild(row);
   attachRowListeners(row);
   updateRowTotals(row);
   updateAddRowButton();
@@ -384,7 +421,11 @@ async function loadSavedData() {
         meritCount = data.meritCount || 1;
         demeritCount = data.demeritCount || 1;
       } else {
-        addRow();
+        const classDoc = await getDoc(doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId));
+        const classInfo = classDoc.exists() ? classDoc.data() : {};
+        const rosterSnap = await getDocs(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'roster'));
+        rosterSnap.forEach(r => addStudentRow(r.data(), classInfo));
+        if (rosterSnap.size === 0) addRow();
       }
     } catch (e) {
       console.error('Firebase load failed', e);
