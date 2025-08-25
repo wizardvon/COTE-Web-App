@@ -93,6 +93,7 @@
     const params = new URLSearchParams(window.location.search);
     const selection = { schoolId: params.get('schoolId'), termId: params.get('termId'), classId: params.get('classId') };
     if (selection.schoolId && selection.termId && selection.classId) {
+      window.selectedSchoolId = selection.schoolId;
       window.dispatchEvent(new CustomEvent('class-selected', { detail: selection }));
     }
   </script>
