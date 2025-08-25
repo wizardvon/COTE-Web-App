@@ -96,15 +96,21 @@ button:hover {
 }
 
 .hidden { display: none !important; }
-.row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.row .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.archive-link {
-  color: #9aa0a6;
-  cursor: pointer;
-  font-size: 0.9rem;
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.actions { display: flex; align-items: center; gap: 12px; }
+.link-btn {
+  background: transparent; border: none; padding: 0;
+  color: #8ab4f8; cursor: pointer; font-size: 0.95rem;
 }
+.link-btn:hover { text-decoration: underline; }
+.archive-link { color: #9aa0a6; cursor: pointer; font-size: 0.9rem; }
 .archive-link:hover { text-decoration: underline; }
 .archive-link.disabled { color: #5f6368; cursor: not-allowed; text-decoration: none; }
+.danger-link { color: #f28b82; cursor: pointer; }
+.danger-link:hover { text-decoration: underline; }
+.muted-link { color: #9aa0a6; cursor: pointer; }
+.muted-link:hover { text-decoration: underline; }
 
 table {
   width: 100%;

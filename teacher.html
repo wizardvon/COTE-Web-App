@@ -22,37 +22,47 @@
   </nav>
   <div id="admin-panel" class="card">
     <h2>School Admin</h2>
-    <ul id="school-list"></ul>
 
-    <button id="toggle-school-form">Create School</button>
-    <form id="create-school-form" style="display:none;">
+    <!-- Create School (always visible) -->
+    <form id="create-school-form">
       <input id="school-name" placeholder="School Name" required>
       <input id="school-address" placeholder="Address" required>
       <input id="school-logo-url" placeholder="Logo URL">
       <button type="submit">Create School</button>
     </form>
 
-    <button id="toggle-term-form">Create Term</button>
-    <form id="create-term-form" class="hidden">
-      <select id="school-select"></select>
-      <input id="school-year" placeholder="School Year" required>
-      <input id="term-name" placeholder="Term Name" required>
-      <button type="submit">Create Term</button>
-    </form>
-    <ul id="term-list"></ul>
+    <h3>Schools</h3>
+    <ul id="school-list"></ul>
 
-    <button id="toggle-class-form">Create Class</button>
-    <form id="create-class-form" class="hidden">
-      <select id="school-select-2"></select>
-      <select id="term-select"></select>
-      <select id="class-select"></select>
-      <input id="class-name" placeholder="Class Name" required>
-      <input id="grade-level" placeholder="Grade Level" required>
-      <input id="section" placeholder="Section" required>
-      <input id="subject" placeholder="Subject" required>
-      <button type="submit">Create Class</button>
-    </form>
-    <ul id="class-list"></ul>
+    <!-- Terms section appears only after selecting a school -->
+    <div id="terms-section" class="hidden">
+      <div class="section-header">
+        <h3>Terms</h3>
+        <button id="show-create-term" type="button" class="link-btn">+ New Term</button>
+      </div>
+      <form id="create-term-form" class="hidden">
+        <input id="school-year" placeholder="School Year" required>
+        <input id="term-name" placeholder="Term Name" required>
+        <button type="submit">Create Term</button>
+      </form>
+      <ul id="term-list"></ul>
+    </div>
+
+    <!-- Classes section appears only after selecting a term -->
+    <div id="classes-section" class="hidden">
+      <div class="section-header">
+        <h3>Classes</h3>
+        <button id="show-create-class" type="button" class="link-btn">+ New Class</button>
+      </div>
+      <form id="create-class-form" class="hidden">
+        <input id="class-name" placeholder="Class Name" required>
+        <input id="grade-level" placeholder="Grade Level" required>
+        <input id="section" placeholder="Section" required>
+        <input id="subject" placeholder="Subject" required>
+        <button type="submit">Create Class</button>
+      </form>
+      <ul id="class-list"></ul>
+    </div>
   </div>
   <div class="card">
     <h2>Select a School</h2>
