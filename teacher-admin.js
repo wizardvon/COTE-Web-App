@@ -48,6 +48,67 @@ export async function archiveDoc(ref, archived = true) {
   await updateDoc(ref, { archived });
 }
 
+export async function listSchoolsForTeacher(uid) {
+  const list = document.getElementById('school-list');
+  const schoolSelectIds = ['school-select', 'school-select-2', 'school-select-3'];
+  const schoolSelects = schoolSelectIds.map(id => document.getElementById(id)).filter(Boolean);
+  list.innerHTML = '';
+  schoolSelects.forEach(sel => sel.innerHTML = "<option value=''>Select School</option>");
+  const schools = new Map();
+  try {
+    const schoolSnap = await getDocs(collection(db, 'schools'));
+    for (const sDoc of schoolSnap.docs) {
+      const data = sDoc.data();
+      const id = sDoc.id;
+      if (data.ownerUid === uid) {
+        schools.set(id, data);
+        continue;
+      }
+      const termSnap = await getDocs(collection(db, 'schools', id, 'terms'));
+      for (const tDoc of termSnap.docs) {
+        const classSnap = await getDocs(collection(db, 'schools', id, 'terms', tDoc.id, 'classes'));
+        if (classSnap.docs.some(c => c.data().teacherUid === uid)) {
+          schools.set(id, data);
+          break;
+        }
+      }
+    }
+    schools.forEach((data, id) => {
+      const li = document.createElement('li');
+      li.textContent = data.name + (data.archived ? ' (Archived)' : '');
+      const btn = document.createElement('button');
+      btn.textContent = data.archived ? 'Unarchive' : 'Archive';
+      if (data.ownerUid !== uid) {
+        btn.disabled = true;
+        btn.title = 'Only owner can archive';
+      } else {
+        btn.addEventListener('click', async e => {
+          e.stopPropagation();
+          try {
+            await updateDoc(doc(db, 'schools', id), { archived: !data.archived });
+            listSchoolsForTeacher(uid);
+          } catch (err) {
+            console.error(err);
+          }
+        });
+      }
+      li.appendChild(btn);
+      li.addEventListener('click', () => listTerms(id));
+      list.appendChild(li);
+      schoolSelects.forEach(sel => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = data.name;
+        sel.appendChild(opt);
+      });
+    });
+    return Array.from(schools, ([id, data]) => ({ id, ...data }));
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}
+
 export async function listAvailableSchools(uid) {
   const snap = await getDocs(collection(db, 'schools'));
   const list = document.getElementById('school-list');
@@ -199,7 +260,7 @@ onAuthStateChanged(auth, async user => {
     window.location.href = 'profile.html';
     return;
   }
-  listAvailableSchools(user.uid);
+  listSchoolsForTeacher(user.uid);
 });
 
 document.getElementById('create-school-form').addEventListener('submit', async e => {
