@@ -70,6 +70,15 @@ export async function listAvailableSchools(uid) {
     const isOwner = data.ownerUid === uid;
     const memberDoc = await getDoc(doc(db, 'schools', id, 'teachers', uid));
     const isMember = isOwner || memberDoc.exists();
+
+    // Add all schools to selection dropdowns regardless of membership
+    schoolSelects.forEach(sel => {
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = data.name;
+      sel.appendChild(opt);
+    });
+
     if (isMember) {
       if (isOwner) {
         const btn = document.createElement('button');
@@ -82,12 +91,6 @@ export async function listAvailableSchools(uid) {
         li.appendChild(btn);
       }
       li.addEventListener('click', () => listTerms(id));
-      schoolSelects.forEach(sel => {
-        const opt = document.createElement('option');
-        opt.value = id;
-        opt.textContent = data.name;
-        sel.appendChild(opt);
-      });
     } else {
       const btn = document.createElement('button');
       btn.textContent = 'Join';
