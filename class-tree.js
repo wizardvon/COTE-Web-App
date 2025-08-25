@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDtaaCxT9tYXPwX3Pvoh_5pJosdmI1KEkM",
@@ -20,9 +20,12 @@ async function buildClassTree(uid) {
   const tree = document.getElementById('class-tree');
   if (!tree) return;
   tree.innerHTML = '';
-  const schoolsSnap = await getDocs(query(collection(db, 'schools'), where('ownerUid', '==', uid)));
+  const schoolsSnap = await getDocs(collection(db, 'schools'));
   for (const schoolDoc of schoolsSnap.docs) {
     const schoolData = schoolDoc.data();
+    const isOwner = schoolData.ownerUid === uid;
+    const memberDoc = await getDoc(doc(db, 'schools', schoolDoc.id, 'teachers', uid));
+    if (!isOwner && !memberDoc.exists()) continue;
     const schoolLi = document.createElement('li');
     schoolLi.textContent = schoolData.name;
     const yearUl = document.createElement('ul');

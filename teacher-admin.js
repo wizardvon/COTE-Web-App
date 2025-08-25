@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDtaaCxT9tYXPwX3Pvoh_5pJosdmI1KEkM",
@@ -17,9 +17,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 function getVal(id) { return document.getElementById(id).value.trim(); }
-function validLRN(v) { return /^\d{12}$/.test(v); }
-function validDate(v) { return /^\d{4}-\d{2}-\d{2}$/.test(v); }
-
 export async function createSchool(ownerUid, data) {
   const ref = doc(collection(db, 'schools'));
   await setDoc(ref, { ...data, ownerUid, createdAt: Date.now(), archived: false });
@@ -38,44 +35,61 @@ export async function createClass(schoolId, termId, data) {
   return ref.id;
 }
 
-export async function addRosterRow(schoolId, termId, classId, data) {
-  const ref = doc(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'roster'));
-  await setDoc(ref, { ...data, linkedUid: null, createdAt: Date.now() });
-}
-
 export async function archiveDoc(ref, archived = true) {
   await updateDoc(ref, { archived });
 }
 
-export async function listSchoolsByOwner(uid) {
-  const snap = await getDocs(query(collection(db, 'schools'), where('ownerUid', '==', uid)));
+export async function listAvailableSchools(uid) {
+  const snap = await getDocs(collection(db, 'schools'));
   const list = document.getElementById('school-list');
-  const schoolSelects = ['school-select', 'school-select-2', 'school-select-3'].map(id => document.getElementById(id));
+  const schoolSelects = ['school-select', 'school-select-2'].map(id => document.getElementById(id));
   list.innerHTML = '';
   schoolSelects.forEach(sel => sel.innerHTML = '<option value="">Select School</option>');
-  snap.forEach(d => {
+  for (const d of snap.docs) {
     const data = d.data();
     const id = d.id;
     const li = document.createElement('li');
     li.textContent = data.name + (data.archived ? ' (Archived)' : '');
-    const btn = document.createElement('button');
-    btn.textContent = data.archived ? 'Unarchive' : 'Archive';
-    btn.addEventListener('click', async e => {
-      e.stopPropagation();
-      await archiveDoc(doc(db, 'schools', id), !data.archived);
-      listSchoolsByOwner(uid);
-    });
-    li.appendChild(btn);
-    li.addEventListener('click', () => listTerms(id));
+    const isOwner = data.ownerUid === uid;
+    const memberDoc = await getDoc(doc(db, 'schools', id, 'teachers', uid));
+    const isMember = isOwner || memberDoc.exists();
+    if (isMember) {
+      if (isOwner) {
+        const btn = document.createElement('button');
+        btn.textContent = data.archived ? 'Unarchive' : 'Archive';
+        btn.addEventListener('click', async e => {
+          e.stopPropagation();
+          await archiveDoc(doc(db, 'schools', id), !data.archived);
+          listAvailableSchools(uid);
+        });
+        li.appendChild(btn);
+      }
+      li.addEventListener('click', () => listTerms(id));
+      schoolSelects.forEach(sel => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = data.name;
+        sel.appendChild(opt);
+      });
+    } else {
+      const btn = document.createElement('button');
+      btn.textContent = 'Join';
+      btn.addEventListener('click', async e => {
+        e.stopPropagation();
+        await joinSchool(id);
+        listAvailableSchools(uid);
+        window.dispatchEvent(new Event('refresh-class-tree'));
+      });
+      li.appendChild(btn);
+    }
     list.appendChild(li);
-    schoolSelects.forEach(sel => {
-      const opt = document.createElement('option');
-      opt.value = id;
-      opt.textContent = data.name;
-      sel.appendChild(opt);
-    });
-  });
+  }
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function joinSchool(schoolId) {
+  const uid = auth.currentUser.uid;
+  await setDoc(doc(db, 'schools', schoolId, 'teachers', uid), { joinedAt: Date.now() });
 }
 
 async function fetchTerms(schoolId) {
@@ -132,19 +146,6 @@ export async function listClasses(schoolId, termId) {
   return classes;
 }
 
-export async function listRoster(schoolId, termId, classId) {
-  const snap = await getDocs(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'roster'));
-  const table = document.getElementById('roster-table');
-  table.innerHTML = '<tr><th>Name</th><th>LRN</th><th>Birthdate</th><th>Sex</th><th>Linked</th><th>AddedAt</th></tr>';
-  snap.forEach(d => {
-    const r = d.data();
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${r.name}</td><td>${r.lrn}</td><td>${r.birthdate}</td><td>${r.sex}</td><td>${r.linkedUid ? 'Yes' : 'No'}</td><td>${new Date(r.createdAt).toLocaleDateString()}</td>`;
-    table.appendChild(tr);
-  });
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-}
-
 async function populateTermOptions(schoolId, selectId) {
   const select = document.getElementById(selectId);
   select.innerHTML = '<option value="">Select Term</option>';
@@ -154,19 +155,6 @@ async function populateTermOptions(schoolId, selectId) {
     const opt = document.createElement('option');
     opt.value = t.id;
     opt.textContent = t.name;
-    select.appendChild(opt);
-  });
-}
-
-async function populateClassOptions(schoolId, termId, selectId) {
-  const select = document.getElementById(selectId);
-  select.innerHTML = '<option value="">Select Class</option>';
-  if (!schoolId || !termId) return;
-  const classes = await fetchClasses(schoolId, termId);
-  classes.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = c.name;
     select.appendChild(opt);
   });
 }
@@ -181,7 +169,7 @@ onAuthStateChanged(auth, async user => {
     window.location.href = 'profile.html';
     return;
   }
-  listSchoolsByOwner(user.uid);
+  listAvailableSchools(user.uid);
 });
 
 document.getElementById('create-school-form').addEventListener('submit', async e => {
@@ -203,7 +191,7 @@ document.getElementById('create-school-form').addEventListener('submit', async e
     await createSchool(user.uid, data);
     alert('School created');
     e.target.reset();
-    listSchoolsByOwner(auth.currentUser.uid);
+    listAvailableSchools(auth.currentUser.uid);
     window.dispatchEvent(new Event('refresh-class-tree'));
   } catch (err) {
     alert(err.message);
@@ -224,7 +212,6 @@ document.getElementById('create-term-form').addEventListener('submit', async e =
     e.target.reset();
     listTerms(schoolId);
     populateTermOptions(schoolId, 'term-select');
-    populateTermOptions(schoolId, 'term-select-2');
     window.dispatchEvent(new Event('refresh-class-tree'));
   } catch (err) {
     alert(err.message);
@@ -248,47 +235,23 @@ document.getElementById('create-class-form').addEventListener('submit', async e 
     alert('Class created');
     e.target.reset();
     listClasses(schoolId, termId);
-    populateClassOptions(schoolId, termId, 'class-select');
     window.dispatchEvent(new Event('refresh-class-tree'));
   } catch (err) {
     alert(err.message);
   }
 });
 
-document.getElementById('add-student-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  const schoolId = document.getElementById('school-select-3').value;
-  const termId = document.getElementById('term-select-2').value;
-  const classId = document.getElementById('class-select').value;
-  const data = {
-    name: getVal('student-name'),
-    lrn: getVal('student-lrn'),
-    birthdate: getVal('student-birthdate'),
-    sex: getVal('student-sex'),
-    email: getVal('student-email') || null,
-    guardianContact: getVal('guardian-contact') || null
-  };
-  if (!schoolId || !termId || !classId || !data.name || !validLRN(data.lrn) || !validDate(data.birthdate) || !data.sex) { alert('Invalid input'); return; }
-  try {
-    await addRosterRow(schoolId, termId, classId, data);
-    alert('Student added');
-    e.target.reset();
-    listRoster(schoolId, termId, classId);
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
 document.getElementById('school-select-2').addEventListener('change', e => populateTermOptions(e.target.value, 'term-select'));
-document.getElementById('school-select-3').addEventListener('change', e => populateTermOptions(e.target.value, 'term-select-2'));
-document.getElementById('term-select-2').addEventListener('change', e => populateClassOptions(document.getElementById('school-select-3').value, e.target.value, 'class-select'));
-document.getElementById('class-select').addEventListener('change', e => {
-  const schoolId = document.getElementById('school-select-3').value;
-  const termId = document.getElementById('term-select-2').value;
-  const classId = e.target.value;
-  if (schoolId && termId && classId) {
-    window.currentSelection = { schoolId, termId, classId };
-    window.dispatchEvent(new CustomEvent('class-selected', { detail: window.currentSelection }));
-    listRoster(schoolId, termId, classId);
-  }
+
+document.getElementById('toggle-school-form').addEventListener('click', () => {
+  const form = document.getElementById('create-school-form');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('toggle-term-form').addEventListener('click', () => {
+  const form = document.getElementById('create-term-form');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('toggle-class-form').addEventListener('click', () => {
+  const form = document.getElementById('create-class-form');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
 });
