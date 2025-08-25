@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teacher Score Encoder</title>
+  <title>Class Score Manager</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,12 +20,13 @@
     <a id="login-link" href="login.html">Login</a>
     <a id="logout-link" href="#" style="display:none;">Logout</a>
   </nav>
+
+  <p><a href="teacher.html" class="link-btn">&larr; Back to Admin</a></p>
+  <h2>Class Score Manager</h2>
+  <p id="class-info" class="muted"></p>
+
   <div class="card">
-    <h2>Classes</h2>
-    <ul id="class-tree"></ul>
-  </div>
-  <div class="card teacher-card">
-    <h2>Teacher Score Encoder</h2>
+    <h3>Roster &amp; Scores</h3>
     <form id="add-student-form">
       <input id="student-name" placeholder="Student Name" required>
       <input id="student-lrn" placeholder="LRN" required>
@@ -35,69 +36,57 @@
         <option value="M">M</option>
         <option value="F">F</option>
       </select>
-      <input id="student-email" placeholder="Email">
-      <input id="guardian-contact" placeholder="Guardian Contact">
+      <input id="student-email" placeholder="Email (optional)">
+      <input id="guardian-contact" placeholder="Guardian Contact (optional)">
       <button type="submit">Add Student</button>
     </form>
+
     <div class="table-container">
       <table id="scores-table">
         <thead>
-        <tr id="group-header">
-          <th colspan="4">Student Profile</th>
-          <th id="ww-group" colspan="2">Written Works</th>
-          <th id="pt-group" colspan="2">Performance Task</th>
-          <th id="merit-group" colspan="2">Merit</th>
-          <th id="demerit-group" colspan="2">Demerit</th>
-        </tr>
-        <tr id="sub-header">
-          <th>Student Name</th>
-          <th>LRN</th>
-          <th>Grade-Section</th>
-          <th>Class</th>
-          <th class="ww-header">W1</th>
-          <th id="ww-total-header">TW</th>
-          <th class="pt-header">PT1</th>
-          <th id="pt-total-header">TP</th>
-          <th class="merit-header">M1</th>
-          <th id="merit-total-header">TM</th>
-          <th class="demerit-header">D1</th>
-          <th id="demerit-total-header">TD</th>
-        </tr>
-        <tr id="max-row">
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th><input type="number" class="ww-max"></th>
-          <th id="ww-max-placeholder"></th>
-          <th><input type="number" class="pt-max"></th>
-          <th id="pt-max-placeholder"></th>
-          <th><input type="text" class="merit-label" maxlength="4"></th>
-          <th id="merit-max-placeholder"></th>
-          <th><input type="text" class="demerit-label" maxlength="4"></th>
-          <th id="demerit-max-placeholder"></th>
-        </tr>
-      </thead>
-      <tbody id="scores-body"></tbody>
-    </table>
+          <tr id="group-header">
+            <th colspan="4">Student Profile</th>
+            <th id="ww-group" colspan="2">Written Works</th>
+            <th id="pt-group" colspan="2">Performance Task</th>
+            <th id="merit-group" colspan="2">Merit</th>
+            <th id="demerit-group" colspan="2">Demerit</th>
+          </tr>
+          <tr id="sub-header">
+            <th>Student Name</th>
+            <th>LRN</th>
+            <th>Birthdate</th>
+            <th>Sex</th>
+            <th class="ww-header">W1</th>
+            <th id="ww-total-header">TW</th>
+            <th class="pt-header">PT1</th>
+            <th id="pt-total-header">TP</th>
+            <th class="merit-header">M1</th>
+            <th id="merit-total-header">TM</th>
+            <th class="demerit-header">D1</th>
+            <th id="demerit-total-header">TD</th>
+          </tr>
+          <tr id="max-row">
+            <th></th><th></th><th></th><th></th>
+            <th><input type="number" class="ww-max"></th><th id="ww-max-placeholder"></th>
+            <th><input type="number" class="pt-max"></th><th id="pt-max-placeholder"></th>
+            <th><input type="text" class="merit-label" maxlength="4"></th><th id="merit-max-placeholder"></th>
+            <th><input type="text" class="demerit-label" maxlength="4"></th><th id="demerit-max-placeholder"></th>
+          </tr>
+        </thead>
+        <tbody id="scores-body"></tbody>
+      </table>
     </div>
     <div class="action-buttons">
       <button id="save">Save</button>
       <button id="download">Download CSV</button>
     </div>
   </div>
+
   <script type="module">
     import { setupNav, requireLogin } from './auth.js';
     setupNav();
     requireLogin(['teacher']);
-    const params = new URLSearchParams(window.location.search);
-    const selection = { schoolId: params.get('schoolId'), termId: params.get('termId'), classId: params.get('classId') };
-    if (selection.schoolId && selection.termId && selection.classId) {
-      window.selectedSchoolId = selection.schoolId;
-      window.dispatchEvent(new CustomEvent('class-selected', { detail: selection }));
-    }
   </script>
-  <script type="module" src="teacher.js"></script>
-  <script type="module" src="class-tree.js"></script>
+  <script type="module" src="teacher-score.js"></script>
 </body>
 </html>
