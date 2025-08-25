@@ -54,6 +54,12 @@ export async function listAvailableSchools(uid) {
   const schoolSelects = ['school-select', 'school-select-2'].map(id => document.getElementById(id));
   list.innerHTML = '';
   schoolSelects.forEach(sel => sel.innerHTML = '<option value="">Select School</option>');
+  if (snap.empty) {
+    const li = document.createElement('li');
+    li.textContent = 'No schools available';
+    list.appendChild(li);
+    return [];
+  }
   for (const d of snap.docs) {
     const data = d.data();
     const id = d.id;

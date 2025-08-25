@@ -42,6 +42,13 @@ async function buildClassTree(uid, selectedSchoolId = null) {
     schoolDocs = schoolsSnap.docs.map(d => ({ id: d.id, data: d.data() }));
   }
 
+  if (schoolDocs.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'No schools available';
+    tree.appendChild(li);
+    return;
+  }
+
   for (const school of schoolDocs) {
     const schoolLi = document.createElement('li');
     const schoolHeader = document.createElement('span');
