@@ -22,7 +22,21 @@ const termId = params.get('termId');
 const classId = params.get('classId');
 if (!schoolId || !termId || !classId) location.href = 'teacher.html';
 
-const current = { schoolId, termId, classId, subject: null, className: null };
+function slug(str){
+  return String(str || '').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+}
+
+const current = {
+  schoolId,
+  termId,
+  classId,
+  subject: null,
+  className: null,
+  section: null,
+  gradeLevel: null,
+  subjectKey: null,
+  sectionKey: null
+};
 
 let wwCount = 1, ptCount = 1, meritCount = 1, demeritCount = 1;
 
@@ -573,11 +587,84 @@ function addDemeritColumn(){
   installColumnResizers();
 }
 
+function applyHeaderConfig(cfg){
+  const wwArr=Array.isArray(cfg.ww)?cfg.ww:[];
+  const ptArr=Array.isArray(cfg.pt)?cfg.pt:[];
+  const meritArr=Array.isArray(cfg.merit)?cfg.merit:[];
+  const demArr=Array.isArray(cfg.demerit)?cfg.demerit:[];
+  for(let i=1;i<wwArr.length;i++) addWWColumn();
+  for(let i=1;i<ptArr.length;i++) addPTColumn();
+  for(let i=1;i<meritArr.length;i++) addMeritColumn();
+  for(let i=1;i<demArr.length;i++) addDemeritColumn();
+  const wwHeaders=document.querySelectorAll('.ww-header');
+  const wwMax=document.querySelectorAll('.ww-max');
+  wwArr.forEach((o,i)=>{
+    if(wwHeaders[i]) wwHeaders[i].textContent=o.key || `W${i+1}`;
+    if(wwMax[i]) wwMax[i].value=o.max ?? '';
+  });
+  const ptHeaders=document.querySelectorAll('.pt-header');
+  const ptMax=document.querySelectorAll('.pt-max');
+  ptArr.forEach((o,i)=>{
+    if(ptHeaders[i]) ptHeaders[i].textContent=o.key || `PT${i+1}`;
+    if(ptMax[i]) ptMax[i].value=o.max ?? '';
+  });
+  const meritHeaders=document.querySelectorAll('.merit-header');
+  const meritLabels=document.querySelectorAll('.merit-label');
+  meritArr.forEach((o,i)=>{
+    if(meritHeaders[i]) meritHeaders[i].textContent=o.key || `M${i+1}`;
+    if(meritLabels[i]) meritLabels[i].value=o.label ?? '';
+  });
+  const demHeaders=document.querySelectorAll('.demerit-header');
+  const demLabels=document.querySelectorAll('.demerit-label');
+  demArr.forEach((o,i)=>{
+    if(demHeaders[i]) demHeaders[i].textContent=o.key || `D${i+1}`;
+    if(demLabels[i]) demLabels[i].value=o.label ?? '';
+  });
+  wwCount=wwArr.length || 1;
+  ptCount=ptArr.length || 1;
+  meritCount=meritArr.length || 1;
+  demeritCount=demArr.length || 1;
+  const wg=document.getElementById('ww-group'); if(wg) wg.colSpan=wwCount+1;
+  const pg=document.getElementById('pt-group'); if(pg) pg.colSpan=ptCount+1;
+  const mg=document.getElementById('merit-group'); if(mg) mg.colSpan=meritCount+1;
+  const dg=document.getElementById('demerit-group'); if(dg) dg.colSpan=demeritCount+1;
+  ensureAddButtons();
+}
+
+async function loadHeaderConfig(){
+  if(!current.subjectKey || !current.sectionKey) { ensureAddButtons(); return; }
+  const ref=doc(db,'schools',schoolId,'terms',termId,'subjects',current.subjectKey,'sections',current.sectionKey,'config');
+  const snap=await getDoc(ref);
+  if(snap.exists()){
+    applyHeaderConfig(snap.data());
+  } else {
+    wwCount=1; ptCount=1; meritCount=1; demeritCount=1;
+    const wg=document.getElementById('ww-group'); if(wg) wg.colSpan=2;
+    const pg=document.getElementById('pt-group'); if(pg) pg.colSpan=2;
+    const mg=document.getElementById('merit-group'); if(mg) mg.colSpan=2;
+    const dg=document.getElementById('demerit-group'); if(dg) dg.colSpan=2;
+    ensureAddButtons();
+  }
+}
+
 async function fetchClassMeta(){
   const classRef=doc(db,'schools',schoolId,'terms',termId,'classes',classId);
   const classSnap=await getDoc(classRef);
-  current.className = classSnap.exists() ? (classSnap.data().name || classId) : classId;
-  current.subject = classSnap.exists() ? (classSnap.data().subject || null) : null;
+  if(classSnap.exists()){
+    const c=classSnap.data();
+    current.className=c.name || classId;
+    current.subject=c.subject || null;
+    current.section=c.section || null;
+    current.gradeLevel=c.gradeLevel || null;
+  }else{
+    current.className=classId;
+  }
+  if(current.gradeLevel && current.subject){
+    current.subjectKey=slug(`${current.gradeLevel}-${current.subject}`);
+  }
+  if(current.section){
+    current.sectionKey=slug(current.section);
+  }
 
   let termText = `Term: ${termId}`;
   const termRef = doc(db,'schools',schoolId,'terms',termId);
@@ -610,70 +697,51 @@ async function fetchClassesSameSubject(){
 async function loadAndRenderSingleClass(){
   const scoresRef=doc(db,'schools',schoolId,'terms',termId,'classes',classId,'scores',auth.currentUser.uid);
   const sSnap=await getDoc(scoresRef);
+  const tbody=document.getElementById('scores-body');
+  tbody.innerHTML='';
   if(sSnap.exists()){
-    const data=sSnap.data();
-    document.getElementById('scores-table').innerHTML=data.tableHTML;
-    wwCount=data.wwCount || 1;
-    ptCount=data.ptCount || 1;
-    meritCount=data.meritCount || 1;
-    demeritCount=data.demeritCount || 1;
-    document.querySelectorAll('#scores-body tr').forEach(row=>{
-      attachRowListeners(row);
-      updateRowTotals(row);
-      const initial = {
-        name: row.children[0]?.textContent.trim() || '',
-        lrn: row.children[1]?.textContent.trim() || '',
-        birthdate: row.children[2]?.textContent.trim() || '',
-        sex: row.children[3]?.textContent.trim() || '',
-        email: row.dataset.email || '',
-        guardianContact: row.dataset.guardian || ''
-      };
-      const editBtn = row.children[6]?.querySelector('.link-btn');
-      const delBtn = row.children[6]?.querySelector('.danger-link');
-      if(editBtn) editBtn.addEventListener('click', () => enterEditMode(row, initial));
-      if(delBtn) delBtn.addEventListener('click', () => attemptDeleteStudent(row, { linkedUid: row.children[5]?.textContent.trim() === 'Yes' }));
-    });
-    ensureAddButtons();
-    const roster=await fetchRosterForClass(classId);
-    const existingLRNs=new Set(Array.from(document.querySelectorAll('#scores-body tr td:nth-child(2)')).map(td=>td.textContent.trim()));
-    const missing=roster.filter(r=>!existingLRNs.has(String(r.lrn||'')));
-    if(missing.length){
-      const ordered=splitBySexAndSort(missing);
-      for(const m of ordered){
-        addRowFromRosterEntry({
-          id: m.id,
-          name: m.name,
-          lrn: m.lrn,
-          birthdate: m.birthdate,
-          sex: m.sex,
-          email: m.email,
-          guardianContact: m.guardianContact,
-          linkedUid: m.linkedUid || null,
-          className: current.className
-        });
-      }
-    }
-    sortExistingRows();
-    ensureAddButtons();
-  } else {
-    const roster=await fetchRosterForClass(classId);
-    const ordered=splitBySexAndSort(roster);
-    document.querySelector('#scores-body').innerHTML='';
-    for(const r of ordered){
+    const parser=document.createElement('table');
+    parser.innerHTML=sSnap.data().tableHTML || '';
+    const savedBody=parser.querySelector('#scores-body');
+    if(savedBody) tbody.innerHTML=savedBody.innerHTML;
+  }
+  document.querySelectorAll('#scores-body tr').forEach(row=>{
+    attachRowListeners(row);
+    updateRowTotals(row);
+    const initial={
+      name: row.children[0]?.textContent.trim() || '',
+      lrn: row.children[1]?.textContent.trim() || '',
+      birthdate: row.children[2]?.textContent.trim() || '',
+      sex: row.children[3]?.textContent.trim() || '',
+      email: row.dataset.email || '',
+      guardianContact: row.dataset.guardian || ''
+    };
+    const editBtn=row.children[6]?.querySelector('.link-btn');
+    const delBtn=row.children[6]?.querySelector('.danger-link');
+    if(editBtn) editBtn.addEventListener('click',()=>enterEditMode(row,initial));
+    if(delBtn) delBtn.addEventListener('click',()=>attemptDeleteStudent(row,{linkedUid: row.children[5]?.textContent.trim()==='Yes'}));
+  });
+  const roster=await fetchRosterForClass(classId);
+  const existingLRNs=new Set(Array.from(document.querySelectorAll('#scores-body tr td:nth-child(2)')).map(td=>td.textContent.trim()));
+  const missing=roster.filter(r=>!existingLRNs.has(String(r.lrn||'')));
+  if(missing.length){
+    const ordered=splitBySexAndSort(missing);
+    for(const m of ordered){
       addRowFromRosterEntry({
-        id: r.id,
-        name: r.name,
-        lrn: r.lrn,
-        birthdate: r.birthdate,
-        sex: r.sex,
-        email: r.email,
-        guardianContact: r.guardianContact,
-        linkedUid: r.linkedUid || null,
-        className: current.className
+        id:m.id,
+        name:m.name,
+        lrn:m.lrn,
+        birthdate:m.birthdate,
+        sex:m.sex,
+        email:m.email,
+        guardianContact:m.guardianContact,
+        linkedUid:m.linkedUid || null,
+        className:current.className
       });
     }
-    ensureAddButtons();
   }
+  sortExistingRows();
+  ensureAddButtons();
   ensureColgroupMatchesHeaders();
   applyDefaultProfileWidthsIfEmpty();
   installColumnResizers();
@@ -778,13 +846,118 @@ document.getElementById('save').addEventListener('click', async ()=>{
     alert('Please disable "Show all sections in this subject" before saving.');
     return;
   }
-    const table=document.getElementById('scores-table');
-    const clone=table.cloneNode(true);
-    clone.querySelectorAll('.th-resizer').forEach(el=>el.remove());
-    clone.querySelectorAll('.th-resizable').forEach(el=>el.classList.remove('th-resizable'));
-    const tableHTML=clone.innerHTML;
+  const wwHeaders=document.querySelectorAll('.ww-header');
+  const wwMax=document.querySelectorAll('.ww-max');
+  const wwInclude=[]; const wwArr=[];
+  wwHeaders.forEach((th,i)=>{
+    const key=th.textContent.trim();
+    const maxVal=parseFloat(wwMax[i]?.value);
+    let include=!isNaN(maxVal);
+    if(!include){
+      document.querySelectorAll('#scores-body tr').some(row=>{
+        const inp=row.querySelectorAll('.ww-input')[i];
+        if(inp && inp.value.trim()!==''){include=true; return true;}
+      });
+    }
+    wwInclude[i]=include;
+    if(include) wwArr.push({key, max:isNaN(maxVal)?null:maxVal});
+  });
+
+  const ptHeaders=document.querySelectorAll('.pt-header');
+  const ptMax=document.querySelectorAll('.pt-max');
+  const ptInclude=[]; const ptArr=[];
+  ptHeaders.forEach((th,i)=>{
+    const key=th.textContent.trim();
+    const maxVal=parseFloat(ptMax[i]?.value);
+    let include=!isNaN(maxVal);
+    if(!include){
+      document.querySelectorAll('#scores-body tr').some(row=>{
+        const inp=row.querySelectorAll('.pt-input')[i];
+        if(inp && inp.value.trim()!==''){include=true; return true;}
+      });
+    }
+    ptInclude[i]=include;
+    if(include) ptArr.push({key, max:isNaN(maxVal)?null:maxVal});
+  });
+
+  const meritHeaders=document.querySelectorAll('.merit-header');
+  const meritLabels=document.querySelectorAll('.merit-label');
+  const meritInclude=[]; const meritArr=[];
+  meritHeaders.forEach((th,i)=>{
+    const key=th.textContent.trim();
+    const label=meritLabels[i]?.value.trim();
+    let include=!!label;
+    if(!include){
+      document.querySelectorAll('#scores-body tr').some(row=>{
+        const inp=row.querySelectorAll('.merit-input')[i];
+        if(inp && inp.value.trim()!==''){include=true; return true;}
+      });
+    }
+    meritInclude[i]=include;
+    if(include) meritArr.push({key, label:label || null});
+  });
+
+  const demHeaders=document.querySelectorAll('.demerit-header');
+  const demLabels=document.querySelectorAll('.demerit-label');
+  const demInclude=[]; const demeritArr=[];
+  demHeaders.forEach((th,i)=>{
+    const key=th.textContent.trim();
+    const label=demLabels[i]?.value.trim();
+    let include=!!label;
+    if(!include){
+      document.querySelectorAll('#scores-body tr').some(row=>{
+        const inp=row.querySelectorAll('.demerit-input')[i];
+        if(inp && inp.value.trim()!==''){include=true; return true;}
+      });
+    }
+    demInclude[i]=include;
+    if(include) demeritArr.push({key, label:label || null});
+  });
+
+  const table=document.getElementById('scores-table');
+  const clone=table.cloneNode(true);
+  clone.querySelectorAll('.th-resizer').forEach(el=>el.remove());
+  clone.querySelectorAll('.th-resizable').forEach(el=>el.classList.remove('th-resizable'));
+  const bodyRows=clone.querySelectorAll('#scores-body tr');
+
+  function prune(headersSel,inputSel,includeArr,maxSel,groupSel){
+    const headers=clone.querySelectorAll(headersSel);
+    const maxes=clone.querySelectorAll(maxSel);
+    for(let i=headers.length-1;i>=0;i--){
+      if(!includeArr[i]){
+        headers[i].remove();
+        if(maxes[i]) maxes[i].parentElement.remove();
+        bodyRows.forEach(r=>{ const inputs=r.querySelectorAll(inputSel); if(inputs[i]) inputs[i].parentElement.remove(); });
+      }
+    }
+    const g=clone.querySelector(groupSel);
+    if(g) g.colSpan = includeArr.filter(x=>x).length + 1;
+  }
+
+  prune('.ww-header','.ww-input',wwInclude,'.ww-max','#ww-group');
+  prune('.pt-header','.pt-input',ptInclude,'.pt-max','#pt-group');
+  prune('.merit-header','.merit-input',meritInclude,'.merit-label','#merit-group');
+  prune('.demerit-header','.demerit-input',demInclude,'.demerit-label','#demerit-group');
+
+  const tableHTML=clone.innerHTML;
   const ref=doc(db,'schools',schoolId,'terms',termId,'classes',classId,'scores',auth.currentUser.uid);
-  await setDoc(ref,{ tableHTML, wwCount, ptCount, meritCount, demeritCount, updatedAt: Date.now() });
+  await setDoc(ref,{ tableHTML, wwCount: wwArr.length, ptCount: ptArr.length, meritCount: meritArr.length, demeritCount: demeritArr.length, updatedAt: Date.now() });
+
+  if(current.subjectKey && current.sectionKey){
+    const cfgRef=doc(db,'schools',schoolId,'terms',termId,'subjects',current.subjectKey,'sections',current.sectionKey,'config');
+    await setDoc(cfgRef,{
+      subject: current.subject || null,
+      section: current.section || null,
+      gradeLevel: current.gradeLevel || null,
+      ww: wwArr,
+      pt: ptArr,
+      merit: meritArr,
+      demerit: demeritArr,
+      updatedBy: auth.currentUser.uid,
+      updatedAt: Date.now()
+    },{merge:true});
+  }
+
   alert('Saved.');
 });
 
@@ -807,6 +980,7 @@ await new Promise(resolve=>{
 });
 
 await fetchClassMeta();
+await loadHeaderConfig();
 await refreshFilterUI();
 ensureColgroupMatchesHeaders();
 applyDefaultProfileWidthsIfEmpty();
