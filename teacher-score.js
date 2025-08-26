@@ -62,13 +62,18 @@ function ensureAddButtons(){
   ];
   groups.forEach(g=>{
     const header=document.getElementById(g.id);
-    let btn=header.querySelector('.add-col-btn');
-    if(!btn){
+    if(!header) return;
+    const existing=header.querySelectorAll('.add-col-btn');
+    let btn;
+    if(existing.length===0){
       btn=document.createElement('button');
       btn.type='button';
       btn.textContent='+';
       btn.className='add-col-btn';
       header.appendChild(btn);
+    }else{
+      btn=existing[0];
+      existing.forEach((b,i)=>{ if(i>0) b.remove(); });
     }
     btn.onclick=g.handler;
   });
@@ -240,7 +245,21 @@ async function fetchClassMeta(){
   const classSnap=await getDoc(classRef);
   current.className = classSnap.exists() ? (classSnap.data().name || classId) : classId;
   current.subject = classSnap.exists() ? (classSnap.data().subject || null) : null;
-  document.getElementById('class-path').textContent = `Class: ${current.className} • Subject: ${current.subject || 'Unknown'} • Term ID: ${termId}`;
+
+  let termText = `Term: ${termId}`;
+  const termRef = doc(db,'schools',schoolId,'terms',termId);
+  const termSnap = await getDoc(termRef);
+  if(termSnap.exists()){
+    const t = termSnap.data();
+    if(t.schoolYear && t.termLabel){
+      termText = `Term: S.Y.${t.schoolYear} - ${t.termLabel}`;
+    } else if(t.name){
+      const parts = String(t.name).split('|').map(s=>s.trim());
+      termText = parts.length === 2 ? `Term: ${parts[0]} - ${parts[1]}` : `Term: ${t.name}`;
+    }
+  }
+
+  document.getElementById('class-path').textContent = `Class: ${current.className} • Subject: ${current.subject || 'Unknown'} • ${termText}`;
 }
 
 async function fetchRosterForClass(cId){
@@ -277,6 +296,7 @@ async function loadAndRenderSingleClass(){
       }
     }
     sortExistingRows();
+    ensureAddButtons();
   } else {
     const roster=await fetchRosterForClass(classId);
     const ordered=splitBySexAndSort(roster);
