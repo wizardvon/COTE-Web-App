@@ -287,3 +287,46 @@ th, td {
   font-size: 0.9rem;
   color: #9aa0a6;
 }
+/* Wider layout just for the score page */
+.score-card {
+  max-width: 1400px;  /* wider than default */
+  width: 98%;
+}
+
+/* Make table columns friendlier for long names/sections */
+#scores-table {
+  table-layout: fixed; /* enables width control/ellipsis */
+}
+
+#scores-table th, #scores-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Give more room to Name and Class/Section columns */
+#scores-table th:nth-child(1), #scores-table td:nth-child(1) { /* Name */
+  width: 24%;
+}
+#scores-table th:nth-child(5), #scores-table td:nth-child(5) { /* Class/Section */
+  width: 18%;
+}
+
+/* Ensure the group headers can host the + button visibly */
+#ww-group, #pt-group, #merit-group, #demerit-group {
+  position: relative;
+  padding-right: 26px; /* room for + button */
+}
+
+/* In case the + buttons were hidden under sticky headers, bring front */
+.add-col-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 5;
+}
+
+@media (max-width: 900px) {
+  #scores-table th:nth-child(1), #scores-table td:nth-child(1) { width: 30%; }
+  #scores-table th:nth-child(5), #scores-table td:nth-child(5) { width: 22%; }
+}
