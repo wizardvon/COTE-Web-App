@@ -26,6 +26,12 @@
     <h2>Class Score Manager</h2>
     <p class="small-note" id="class-path"></p>
 
+    <div class="controls">
+      <label><input type="checkbox" id="show-all-sections"> Show all sections in this subject</label>
+      <select id="section-select" class="hidden"></select>
+      <span class="small-note">Tip: toggle to view all sections that share this subject in the selected term.</span>
+    </div>
+
     <form id="add-student-form">
       <input id="student-name" placeholder="Student Name" required>
       <input id="student-lrn" placeholder="LRN" required>
@@ -40,7 +46,7 @@
       <table id="scores-table">
         <thead>
           <tr id="group-header">
-            <th colspan="4">Student Profile</th>
+            <th colspan="5">Student Profile</th>
             <th id="ww-group" colspan="2">Written Works</th>
             <th id="pt-group" colspan="2">Performance Task</th>
             <th id="merit-group" colspan="2">Merit</th>
@@ -51,6 +57,7 @@
             <th>LRN</th>
             <th>Birthdate</th>
             <th>Sex</th>
+            <th>Class/Section</th>
             <th class="ww-header">W1</th>
             <th id="ww-total-header">TW</th>
             <th class="pt-header">PT1</th>
@@ -61,7 +68,7 @@
             <th id="demerit-total-header">TD</th>
           </tr>
           <tr id="max-row">
-            <th></th><th></th><th></th><th></th>
+            <th></th><th></th><th></th><th></th><th></th>
             <th><input type="number" class="ww-max"></th><th id="ww-max-placeholder"></th>
             <th><input type="number" class="pt-max"></th><th id="pt-max-placeholder"></th>
             <th><input type="text" class="merit-label" maxlength="4"></th><th id="merit-max-placeholder"></th>
