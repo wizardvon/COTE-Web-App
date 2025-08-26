@@ -110,8 +110,17 @@ button:hover {
 .archive-link { color: #9aa0a6; cursor: pointer; font-size: 0.9rem; }
 .archive-link:hover { text-decoration: underline; }
 .archive-link.disabled { color: #5f6368; cursor: not-allowed; text-decoration: none; }
-.danger-link { color: #f28b82; cursor: pointer; }
-.danger-link:hover { text-decoration: underline; }
+.danger-link {
+  background: none;
+  border: none;
+  color: #f28b82;         /* red text */
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 0;
+}
+.danger-link:hover {
+  text-decoration: underline;
+}
 .actions-cell { display:flex; gap:10px; align-items:center; justify-content:flex-start; }
 .inline-input { width: 95%; }
 .muted { color: #9aa0a6; }

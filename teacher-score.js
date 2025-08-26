@@ -262,7 +262,9 @@ function addRowFromRosterEntry({ id: rosterId, name, lrn, birthdate, sex, email,
   const tdActions = document.createElement('td');
   tdActions.className = 'actions-cell';
   const editBtn = document.createElement('button'); editBtn.type = 'button'; editBtn.className = 'link-btn'; editBtn.textContent = 'Edit';
-  const delBtn = document.createElement('button'); delBtn.type = 'button'; delBtn.className = 'danger-link'; delBtn.textContent = 'Delete';
+  const delBtn = document.createElement('span');
+  delBtn.className = 'danger-link';
+  delBtn.textContent = 'Delete';
   tdActions.append(editBtn, delBtn);
 
   tr.append(tdName, tdLrn, tdDob, tdSex, tdClass, tdLink, tdActions);
@@ -352,7 +354,9 @@ function enterEditMode(tr, initial) {
     tdSex.textContent = (initial.sex || '').toUpperCase();
     tdActions.innerHTML = '';
     const editBtn = document.createElement('button'); editBtn.type = 'button'; editBtn.className = 'link-btn'; editBtn.textContent = 'Edit';
-    const delBtn = document.createElement('button'); delBtn.type = 'button'; delBtn.className = 'danger-link'; delBtn.textContent = 'Delete';
+    const delBtn = document.createElement('span');
+    delBtn.className = 'danger-link';
+    delBtn.textContent = 'Delete';
     tdActions.append(editBtn, delBtn);
     editBtn.addEventListener('click', () => enterEditMode(tr, initial));
     delBtn.addEventListener('click', () => attemptDeleteStudent(tr, { linkedUid: tr.children[5].textContent.trim() === 'Yes' }));
@@ -386,7 +390,9 @@ function enterEditMode(tr, initial) {
     tr.dataset.guardian = guardInp.value.trim() || '';
     tdActions.innerHTML = '';
     const editBtn = document.createElement('button'); editBtn.type = 'button'; editBtn.className = 'link-btn'; editBtn.textContent = 'Edit';
-    const delBtn = document.createElement('button'); delBtn.type = 'button'; delBtn.className = 'danger-link'; delBtn.textContent = 'Delete';
+    const delBtn = document.createElement('span');
+    delBtn.className = 'danger-link';
+    delBtn.textContent = 'Delete';
     tdActions.append(editBtn, delBtn);
     editBtn.addEventListener('click', () => enterEditMode(tr, {
       name: tdName.textContent, lrn: tdLrn.textContent, birthdate: tdDob.textContent, sex: tdSex.textContent,
@@ -400,34 +406,44 @@ function enterEditMode(tr, initial) {
 
 async function attemptDeleteStudent(tr, { linkedUid }) {
   const name = tr.children[0]?.textContent?.trim() || 'this student';
+
+  // Block if linked
   const isLinked = (tr.children[5]?.textContent?.trim() === 'Yes') || !!linkedUid;
   if (isLinked) {
-    alert('Cannot delete: student is linked to an account. Ask the student to transfer/unenroll first, or archive instead.');
+    alert(`Cannot delete "${name}": student is linked to an account.`);
     return;
   }
 
-  const inRowHasScores = rowHasAnyScores(tr);
-  if (inRowHasScores) {
-    const proceed = confirm(`This row has scores entered for "${name}". Deleting removes this row from your current table. Continue?`);
+  // Warn if scores exist
+  const hasScores = rowHasAnyScores(tr);
+  if (hasScores) {
+    const proceed = confirm(`"${name}" has scores entered. Deleting will remove them. Continue?`);
     if (!proceed) return;
   }
 
-  const typed = prompt(`Delete "${name}" from this class?\nType DELETE to confirm.`);
-  if (typed !== 'DELETE') return;
+  // Require typing DELETE
+  const typed = prompt(`Type DELETE to confirm removing "${name}" from this class:`);
+  if (typed !== 'DELETE') {
+    alert('Deletion cancelled.');
+    return;
+  }
 
   const rosterId = tr.dataset.rosterId;
   if (!rosterId) return alert('Missing rosterId.');
 
+  // Delete Firestore doc
   const ref = doc(db,'schools',schoolId,'terms',termId,'classes',classId,'roster',rosterId);
   await deleteDoc(ref);
+
+  // Remove row from UI
   tr.remove();
 }
 
 function rowHasAnyScores(tr) {
-  const cells = Array.from(tr.children).slice(7);
+  const cells = Array.from(tr.children).slice(7); // skip profile cells
   return cells.some(td => {
     const inp = td.querySelector('input');
-    return inp && (String(inp.value).trim() !== '');
+    return inp && inp.value.trim() !== '';
   });
 }
 
