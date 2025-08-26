@@ -169,6 +169,7 @@ function applyDefaultProfileWidthsIfEmpty() {
   if (cols[2]) cols[2].style.width = '120px';
   if (cols[3]) cols[3].style.width = '80px';
   if (cols[4]) cols[4].style.width = '260px';
+  if (cols[5]) cols[5].style.width = '90px';
 }
 
 function ci(a){return (a || '').trim().toLowerCase();}
@@ -243,7 +244,7 @@ function attachRowListeners(row){
   row.querySelectorAll('.demerit-input').forEach(i=>i.addEventListener('input',()=>updateRowTotals(row)));
 }
 
-function addRowFromRosterEntry({name, lrn, birthdate, sex, className}){
+function addRowFromRosterEntry({name, lrn, birthdate, sex, className, linkedUid}){
   const tbody=document.getElementById('scores-body');
   const tr=document.createElement('tr');
   let cells = `
@@ -252,6 +253,7 @@ function addRowFromRosterEntry({name, lrn, birthdate, sex, className}){
     <td>${birthdate || ''}</td>
     <td>${sex || ''}</td>
     <td>${className ? `<span class="badge">${className}</span>` : ''}</td>
+    <td>${linkedUid ? 'Yes' : 'No'}</td>
   `;
   for(let i=0;i<wwCount;i++) cells += '<td><input type="number" class="ww-input"></td>';
   cells += '<td><input type="number" class="ww-total" readonly></td>';
@@ -445,7 +447,7 @@ async function loadAndRenderSingleClass(){
     if(missing.length){
       const ordered=splitBySexAndSort(missing);
       for(const m of ordered){
-        addRowFromRosterEntry({name:m.name, lrn:m.lrn, birthdate:m.birthdate, sex:m.sex, className: current.className});
+        addRowFromRosterEntry({name:m.name, lrn:m.lrn, birthdate:m.birthdate, sex:m.sex, className: current.className, linkedUid: m.linkedUid || null});
       }
     }
     sortExistingRows();
@@ -455,7 +457,7 @@ async function loadAndRenderSingleClass(){
     const ordered=splitBySexAndSort(roster);
     document.querySelector('#scores-body').innerHTML='';
     for(const r of ordered){
-      addRowFromRosterEntry({name:r.name, lrn:r.lrn, birthdate:r.birthdate, sex:r.sex, className: current.className});
+      addRowFromRosterEntry({name:r.name, lrn:r.lrn, birthdate:r.birthdate, sex:r.sex, className: current.className, linkedUid: r.linkedUid || null});
     }
     ensureAddButtons();
   }
@@ -486,7 +488,7 @@ async function loadAndRenderMerged(subjectClasses, selected){
   const ordered=splitBySexAndSort(merged);
   document.querySelector('#scores-body').innerHTML='';
   for(const s of ordered){
-    addRowFromRosterEntry({name:s.name, lrn:s.lrn, birthdate:s.birthdate, sex:s.sex, className:s.className});
+    addRowFromRosterEntry({name:s.name, lrn:s.lrn, birthdate:s.birthdate, sex:s.sex, className:s.className, linkedUid: s.linkedUid || null});
   }
   ensureAddButtons();
   ensureColgroupMatchesHeaders();
@@ -542,7 +544,7 @@ document.getElementById('add-student-form').addEventListener('submit', async e=>
   if(showAllChk.checked){
     await refreshFilterUI();
   } else {
-    addRowFromRosterEntry({name, lrn, birthdate, sex, className: current.className});
+    addRowFromRosterEntry({name, lrn, birthdate, sex, className: current.className, linkedUid: null});
     sortExistingRows();
   }
   e.target.reset();

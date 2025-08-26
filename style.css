@@ -31,8 +31,10 @@ body {
 }
 
 .table-container {
-  overflow: auto;
-  max-height: 400px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+  padding-bottom: 6px;
 }
 
 .navbar {
@@ -296,13 +298,39 @@ th, td {
 /* Resizable columns */
 #scores-table {
   table-layout: fixed;  /* required for explicit widths to apply */
-  width: 100%;
+  width: max(1400px, 100%);
 }
 
 #scores-table th, #scores-table td {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Default min-widths for profile columns */
+#scores-table thead tr#sub-header th:nth-child(1),
+#scores-table tbody tr td:nth-child(1) {
+  min-width: 220px;
+}
+#scores-table thead tr#sub-header th:nth-child(2),
+#scores-table tbody tr td:nth-child(2) {
+  min-width: 120px;
+}
+#scores-table thead tr#sub-header th:nth-child(3),
+#scores-table tbody tr td:nth-child(3) {
+  min-width: 120px;
+}
+#scores-table thead tr#sub-header th:nth-child(4),
+#scores-table tbody tr td:nth-child(4) {
+  min-width: 80px;
+}
+#scores-table thead tr#sub-header th:nth-child(5),
+#scores-table tbody tr td:nth-child(5) {
+  min-width: 220px;
+}
+#scores-table thead tr#sub-header th:nth-child(6),
+#scores-table tbody tr td:nth-child(6) {
+  min-width: 90px;
 }
 
 .th-resizable {
