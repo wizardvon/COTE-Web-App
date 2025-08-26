@@ -293,23 +293,41 @@ th, td {
   width: 98%;
 }
 
-/* Make table columns friendlier for long names/sections */
+/* Student Profile column widths for score table */
 #scores-table {
-  table-layout: fixed; /* enables width control/ellipsis */
+  table-layout: fixed;
+  width: 100%;
 }
 
 #scores-table th, #scores-table td {
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-/* Give more room to Name and Class/Section columns */
-#scores-table th:nth-child(1), #scores-table td:nth-child(1) { /* Name */
-  width: 24%;
+#scores-table th:nth-child(1),
+#scores-table td:nth-child(1) { /* Name */
+  width: 30%;
 }
-#scores-table th:nth-child(5), #scores-table td:nth-child(5) { /* Class/Section */
-  width: 18%;
+
+#scores-table th:nth-child(2),
+#scores-table td:nth-child(2) { /* LRN */
+  width: 15%;
+}
+
+#scores-table th:nth-child(3),
+#scores-table td:nth-child(3) { /* Birthdate */
+  width: 12%;
+}
+
+#scores-table th:nth-child(4),
+#scores-table td:nth-child(4) { /* Sex */
+  width: 8%;
+}
+
+#scores-table th:nth-child(5),
+#scores-table td:nth-child(5) { /* Class/Section */
+  width: 35%;
 }
 
 /* Ensure the group headers can host the + button visibly */
@@ -324,9 +342,4 @@ th, td {
   top: 2px;
   right: 2px;
   z-index: 5;
-}
-
-@media (max-width: 900px) {
-  #scores-table th:nth-child(1), #scores-table td:nth-child(1) { width: 30%; }
-  #scores-table th:nth-child(5), #scores-table td:nth-child(5) { width: 22%; }
 }
