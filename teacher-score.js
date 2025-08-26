@@ -26,6 +26,151 @@ const current = { schoolId, termId, classId, subject: null, className: null };
 
 let wwCount = 1, ptCount = 1, meritCount = 1, demeritCount = 1;
 
+function widthsStorageKey(schoolId, termId, classId) {
+  return `scoreTableWidths:${schoolId}:${termId}:${classId}`;
+}
+
+function loadStoredWidths(schoolId, termId, classId) {
+  try { return JSON.parse(localStorage.getItem(widthsStorageKey(schoolId, termId, classId)) || '[]'); }
+  catch { return []; }
+}
+
+function saveStoredWidths(schoolId, termId, classId, arr) {
+  localStorage.setItem(widthsStorageKey(schoolId, termId, classId), JSON.stringify(arr));
+}
+
+function getHeaderCells() {
+  // Use the sub-header row as the canon for columns (Name, LRN, ... TW/TP/TM/TD etc.)
+  return Array.from(document.querySelectorAll('#scores-table thead tr#sub-header th'));
+}
+
+function getAllCellsInColumn(colIndex) {
+  // colIndex is 0-based; match both THs and TDs
+  const rows = Array.from(document.querySelectorAll('#scores-table tr'));
+  return rows
+    .map(r => r.children[colIndex])
+    .filter(Boolean);
+}
+
+function ensureColgroupMatchesHeaders() {
+  const headers = getHeaderCells();
+  const cg = document.getElementById('scores-colgroup');
+  if (!cg) return;
+  // Rebuild <colgroup> with one <col> per header
+  cg.innerHTML = '';
+  headers.forEach(() => {
+    const col = document.createElement('col');
+    cg.appendChild(col);
+  });
+}
+
+function applyColumnWidthsFromStorage() {
+  const headers = getHeaderCells();
+  const cg = document.getElementById('scores-colgroup');
+  if (!cg) return;
+  const cols = Array.from(cg.children);
+  const stored = loadStoredWidths(schoolId, termId, classId);
+
+  headers.forEach((th, i) => {
+    th.classList.add('th-resizable'); // ensure resizable class
+    const w = stored[i];
+    if (w && cols[i]) cols[i].style.width = `${w}px`;
+  });
+}
+
+function measureAutoFitWidth(colIndex) {
+  // Find max scrollWidth among all cells in this column + a small padding
+  const cells = getAllCellsInColumn(colIndex);
+  let max = 0;
+  cells.forEach(cell => {
+    const w = cell.scrollWidth + 16; // 16px buffer
+    if (w > max) max = w;
+  });
+  // Cap at table container width to avoid overshoot
+  const container = document.querySelector('.table-container') || document.getElementById('scores-table').parentElement;
+  const maxAllowed = container ? container.clientWidth - 24 : max;
+  return Math.min(max, maxAllowed);
+}
+
+let _drag = null; // { startX, startWidth, colIndex, colEl, guideEl }
+
+function installColumnResizers() {
+  ensureColgroupMatchesHeaders();
+  applyColumnWidthsFromStorage();
+
+  const headers = getHeaderCells();
+  const cg = document.getElementById('scores-colgroup');
+  const cols = cg ? Array.from(cg.children) : [];
+
+  headers.forEach((th, i) => {
+    if (th.querySelector('.th-resizer')) return;
+
+    const handle = document.createElement('div');
+    handle.className = 'th-resizer';
+    th.appendChild(handle);
+
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      document.body.classList.add('user-select-none');
+
+      const colEl = cols[i];
+      const startWidth = (colEl && colEl.style.width) ? parseFloat(colEl.style.width) : th.offsetWidth;
+      _drag = { startX: e.clientX, startWidth, colIndex: i, colEl };
+
+      const guide = document.createElement('div');
+      guide.className = 'col-resize-guide';
+      guide.style.left = `${e.clientX}px`;
+      document.body.appendChild(guide);
+      _drag.guideEl = guide;
+
+      const onMove = (ev) => {
+        if (!_drag) return;
+        const delta = ev.clientX - _drag.startX;
+        const newW = Math.max(60, _drag.startWidth + delta);
+        if (_drag.colEl) _drag.colEl.style.width = `${newW}px`;
+        if (_drag.guideEl) _drag.guideEl.style.left = `${ev.clientX}px`;
+      };
+
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.classList.remove('user-select-none');
+        if (_drag?.guideEl) _drag.guideEl.remove();
+
+        const newWidths = Array.from(cols).map(c => c.style.width ? parseFloat(c.style.width) : null);
+        saveStoredWidths(schoolId, termId, classId, newWidths);
+        _drag = null;
+      };
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    handle.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      const autoW = measureAutoFitWidth(i);
+      if (cols[i]) {
+        cols[i].style.width = `${autoW}px`;
+        const newWidths = Array.from(cols).map(c => c.style.width ? parseFloat(c.style.width) : null);
+        saveStoredWidths(schoolId, termId, classId, newWidths);
+      }
+    });
+  });
+}
+
+function applyDefaultProfileWidthsIfEmpty() {
+  const cg = document.getElementById('scores-colgroup');
+  if (!cg) return;
+  const cols = Array.from(cg.children);
+  const stored = loadStoredWidths(schoolId, termId, classId);
+  if (stored.length) return;
+  if (cols[0]) cols[0].style.width = '280px';
+  if (cols[1]) cols[1].style.width = '120px';
+  if (cols[2]) cols[2].style.width = '120px';
+  if (cols[3]) cols[3].style.width = '80px';
+  if (cols[4]) cols[4].style.width = '260px';
+}
+
 function ci(a){return (a || '').trim().toLowerCase();}
 function sortByName(a,b){return ci(a.name).localeCompare(ci(b.name));}
 function splitBySexAndSort(roster){
@@ -149,6 +294,8 @@ function addWWColumn(){
     row.insertBefore(td,totalCell);
     input.addEventListener('input',()=>updateRowTotals(row));
   });
+  ensureColgroupMatchesHeaders();
+  installColumnResizers();
 }
 
 function addPTColumn(){
@@ -178,6 +325,8 @@ function addPTColumn(){
     row.insertBefore(td,totalCell);
     input.addEventListener('input',()=>updateRowTotals(row));
   });
+  ensureColgroupMatchesHeaders();
+  installColumnResizers();
 }
 
 function addMeritColumn(){
@@ -208,6 +357,8 @@ function addMeritColumn(){
     row.insertBefore(td,totalCell);
     input.addEventListener('input',()=>updateRowTotals(row));
   });
+  ensureColgroupMatchesHeaders();
+  installColumnResizers();
 }
 
 function addDemeritColumn(){
@@ -238,6 +389,8 @@ function addDemeritColumn(){
     row.insertBefore(td,totalCell);
     input.addEventListener('input',()=>updateRowTotals(row));
   });
+  ensureColgroupMatchesHeaders();
+  installColumnResizers();
 }
 
 async function fetchClassMeta(){
@@ -306,6 +459,9 @@ async function loadAndRenderSingleClass(){
     }
     ensureAddButtons();
   }
+  ensureColgroupMatchesHeaders();
+  applyDefaultProfileWidthsIfEmpty();
+  installColumnResizers();
 }
 
 async function loadAndRenderMerged(subjectClasses, selected){
@@ -333,6 +489,9 @@ async function loadAndRenderMerged(subjectClasses, selected){
     addRowFromRosterEntry({name:s.name, lrn:s.lrn, birthdate:s.birthdate, sex:s.sex, className:s.className});
   }
   ensureAddButtons();
+  ensureColgroupMatchesHeaders();
+  applyDefaultProfileWidthsIfEmpty();
+  installColumnResizers();
 }
 
 const showAllChk=document.getElementById('show-all-sections');
@@ -394,7 +553,11 @@ document.getElementById('save').addEventListener('click', async ()=>{
     alert('Please disable "Show all sections in this subject" before saving.');
     return;
   }
-  const tableHTML=document.getElementById('scores-table').innerHTML;
+    const table=document.getElementById('scores-table');
+    const clone=table.cloneNode(true);
+    clone.querySelectorAll('.th-resizer').forEach(el=>el.remove());
+    clone.querySelectorAll('.th-resizable').forEach(el=>el.classList.remove('th-resizable'));
+    const tableHTML=clone.innerHTML;
   const ref=doc(db,'schools',schoolId,'terms',termId,'classes',classId,'scores',auth.currentUser.uid);
   await setDoc(ref,{ tableHTML, wwCount, ptCount, meritCount, demeritCount, updatedAt: Date.now() });
   alert('Saved.');
@@ -420,4 +583,7 @@ await new Promise(resolve=>{
 
 await fetchClassMeta();
 await refreshFilterUI();
+ensureColgroupMatchesHeaders();
+applyDefaultProfileWidthsIfEmpty();
+installColumnResizers();
 

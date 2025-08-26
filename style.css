@@ -293,9 +293,9 @@ th, td {
   width: 98%;
 }
 
-/* Student Profile column widths for score table */
+/* Resizable columns */
 #scores-table {
-  table-layout: fixed;
+  table-layout: fixed;  /* required for explicit widths to apply */
   width: 100%;
 }
 
@@ -305,30 +305,41 @@ th, td {
   text-overflow: ellipsis;
 }
 
-#scores-table th:nth-child(1),
-#scores-table td:nth-child(1) { /* Name */
-  width: 30%;
+.th-resizable {
+  position: relative;
 }
 
-#scores-table th:nth-child(2),
-#scores-table td:nth-child(2) { /* LRN */
-  width: 15%;
+.th-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;           /* small overlap so it's easy to grab */
+  width: 8px;            /* hit area for mouse */
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
 }
 
-#scores-table th:nth-child(3),
-#scores-table td:nth-child(3) { /* Birthdate */
-  width: 12%;
+.th-resizer:hover {
+  background: rgba(255,255,255,0.06);
 }
 
-#scores-table th:nth-child(4),
-#scores-table td:nth-child(4) { /* Sex */
-  width: 8%;
+.user-select-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
 }
 
-#scores-table th:nth-child(5),
-#scores-table td:nth-child(5) { /* Class/Section */
-  width: 35%;
+/* Optional: visual line while dragging */
+.col-resize-guide {
+  position: fixed;
+  top: 0;
+  width: 1px;
+  height: 100vh;
+  background: #8ab4f8;
+  pointer-events: none;
+  z-index: 9999;
 }
+
 
 /* Ensure the group headers can host the + button visibly */
 #ww-group, #pt-group, #merit-group, #demerit-group {
