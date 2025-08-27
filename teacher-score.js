@@ -813,6 +813,10 @@ async function refreshFilterUI(){
 
 showAllChk.addEventListener('change', refreshFilterUI);
 sectionSelect.addEventListener('change', async e=>{
+  if(!showAllChk.checked){
+    await loadAndRenderSingleClass();
+    return;
+  }
   const classes=await fetchClassesSameSubject();
   classes.sort((a,b)=>ci(a.name).localeCompare(ci(b.name)));
   await loadAndRenderMerged(classes, e.target.value);
@@ -843,8 +847,7 @@ document.getElementById('add-student-form').addEventListener('submit', async e=>
 
 document.getElementById('save').addEventListener('click', async ()=>{
   if(showAllChk.checked){
-    alert('Please disable "Show all sections in this subject" before saving.');
-    return;
+    console.info('Saving to current class only.');
   }
   const wwHeaders=document.querySelectorAll('.ww-header');
   const wwMax=document.querySelectorAll('.ww-max');
@@ -981,8 +984,7 @@ await new Promise(resolve=>{
 
 await fetchClassMeta();
 await loadHeaderConfig();
-await refreshFilterUI();
-ensureColgroupMatchesHeaders();
-applyDefaultProfileWidthsIfEmpty();
-installColumnResizers();
+if(showAllChk) showAllChk.checked=false;
+if(sectionSelect) sectionSelect.classList.add('hidden');
+await loadAndRenderSingleClass();
 
