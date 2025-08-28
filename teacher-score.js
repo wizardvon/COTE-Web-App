@@ -845,10 +845,15 @@ document.getElementById('add-student-form').addEventListener('submit', async e=>
   e.target.reset();
 });
 
-document.getElementById('save').addEventListener('click', async ()=>{
+const saveBtnEl = document.getElementById('save');
+saveBtnEl.addEventListener('click', async ()=>{
   if(showAllChk.checked){
     console.info('Saving to current class only.');
   }
+
+  const originalText = saveBtnEl.textContent;
+  saveBtnEl.disabled = true;
+  saveBtnEl.textContent = 'Saving...';
   const wwHeaders=document.querySelectorAll('.ww-header');
   const wwMax=document.querySelectorAll('.ww-max');
   const wwInclude=[]; const wwArr=[];
@@ -942,26 +947,37 @@ document.getElementById('save').addEventListener('click', async ()=>{
   prune('.merit-header','.merit-input',meritInclude,'.merit-label','#merit-group');
   prune('.demerit-header','.demerit-input',demInclude,'.demerit-label','#demerit-group');
 
-  const tableHTML=clone.innerHTML;
-  const ref=doc(db,'schools',schoolId,'terms',termId,'classes',classId,'scores',auth.currentUser.uid);
-  await setDoc(ref,{ tableHTML, wwCount: wwArr.length, ptCount: ptArr.length, meritCount: meritArr.length, demeritCount: demeritArr.length, updatedAt: Date.now() });
+  try {
+    const tableHTML=clone.innerHTML;
+    const ref=doc(db,'schools',schoolId,'terms',termId,'classes',classId,'scores',auth.currentUser.uid);
+    await setDoc(ref,{ tableHTML, wwCount: wwArr.length, ptCount: ptArr.length, meritCount: meritArr.length, demeritCount: demeritArr.length, updatedAt: Date.now() });
 
-  if(current.subjectKey && current.sectionKey){
-    const cfgRef=doc(db,'schools',schoolId,'terms',termId,'subjects',current.subjectKey,'sections',current.sectionKey,'config');
-    await setDoc(cfgRef,{
-      subject: current.subject || null,
-      section: current.section || null,
-      gradeLevel: current.gradeLevel || null,
-      ww: wwArr,
-      pt: ptArr,
-      merit: meritArr,
-      demerit: demeritArr,
-      updatedBy: auth.currentUser.uid,
-      updatedAt: Date.now()
-    },{merge:true});
+    if(current.subjectKey && current.sectionKey){
+      const cfgRef=doc(db,'schools',schoolId,'terms',termId,'subjects',current.subjectKey,'sections',current.sectionKey,'config');
+      await setDoc(cfgRef,{
+        subject: current.subject || null,
+        section: current.section || null,
+        gradeLevel: current.gradeLevel || null,
+        ww: wwArr,
+        pt: ptArr,
+        merit: meritArr,
+        demerit: demeritArr,
+        updatedBy: auth.currentUser.uid,
+        updatedAt: Date.now()
+      },{merge:true});
+    }
+
+    saveBtnEl.textContent = 'Saved!';
+  } catch (err) {
+    console.error('Error saving scores', err);
+    alert('Failed to save.');
+    saveBtnEl.textContent = originalText;
+  } finally {
+    setTimeout(()=>{
+      saveBtnEl.textContent = originalText;
+      saveBtnEl.disabled = false;
+    },2000);
   }
-
-  alert('Saved.');
 });
 
 document.getElementById('download').addEventListener('click', ()=>{
