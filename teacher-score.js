@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDtaaCxT9tYXPwX3Pvoh_5pJosdmI1KEkM",
@@ -22,24 +22,9 @@ const termId = params.get('termId');
 const classId = params.get('classId');
 if (!schoolId || !termId || !classId) location.href = 'teacher.html';
 
-function slug(str){
-  return String(str || '').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-}
-
-const current = {
-  schoolId,
-  termId,
-  classId,
-  subject: null,
-  className: null,
-  section: null,
-  gradeLevel: null,
-  subjectKey: null,
-  sectionKey: null
-};
-
-let wwCount = 1, ptCount = 1, meritCount = 1, demeritCount = 1;
-
+// ---------------------------------------------------------------------------
+// Column width persistence/resizing helpers (from previous implementation)
+// ---------------------------------------------------------------------------
 function widthsStorageKey(schoolId, termId, classId) {
   return `scoreTableWidths:${schoolId}:${termId}:${classId}`;
 }
@@ -54,23 +39,18 @@ function saveStoredWidths(schoolId, termId, classId, arr) {
 }
 
 function getHeaderCells() {
-  // Use the sub-header row as the canon for columns (Name, LRN, ... TW/TP/TM/TD etc.)
   return Array.from(document.querySelectorAll('#scores-table thead tr#sub-header th'));
 }
 
 function getAllCellsInColumn(colIndex) {
-  // colIndex is 0-based; match both THs and TDs
   const rows = Array.from(document.querySelectorAll('#scores-table tr'));
-  return rows
-    .map(r => r.children[colIndex])
-    .filter(Boolean);
+  return rows.map(r => r.children[colIndex]).filter(Boolean);
 }
 
 function ensureColgroupMatchesHeaders() {
   const headers = getHeaderCells();
   const cg = document.getElementById('scores-colgroup');
   if (!cg) return;
-  // Rebuild <colgroup> with one <col> per header
   cg.innerHTML = '';
   headers.forEach(() => {
     const col = document.createElement('col');
@@ -84,23 +64,20 @@ function applyColumnWidthsFromStorage() {
   if (!cg) return;
   const cols = Array.from(cg.children);
   const stored = loadStoredWidths(schoolId, termId, classId);
-
   headers.forEach((th, i) => {
-    th.classList.add('th-resizable'); // ensure resizable class
+    th.classList.add('th-resizable');
     const w = stored[i];
     if (w && cols[i]) cols[i].style.width = `${w}px`;
   });
 }
 
 function measureAutoFitWidth(colIndex) {
-  // Find max scrollWidth among all cells in this column + a small padding
   const cells = getAllCellsInColumn(colIndex);
   let max = 0;
   cells.forEach(cell => {
-    const w = cell.scrollWidth + 16; // 16px buffer
+    const w = cell.scrollWidth + 16;
     if (w > max) max = w;
   });
-  // Cap at table container width to avoid overshoot
   const container = document.querySelector('.table-container') || document.getElementById('scores-table').parentElement;
   const maxAllowed = container ? container.clientWidth - 24 : max;
   return Math.min(max, maxAllowed);
@@ -118,7 +95,6 @@ function installColumnResizers() {
 
   headers.forEach((th, i) => {
     if (th.querySelector('.th-resizer')) return;
-
     const handle = document.createElement('div');
     handle.className = 'th-resizer';
     th.appendChild(handle);
@@ -126,7 +102,6 @@ function installColumnResizers() {
     handle.addEventListener('mousedown', (e) => {
       e.preventDefault();
       document.body.classList.add('user-select-none');
-
       const colEl = cols[i];
       const startWidth = (colEl && colEl.style.width) ? parseFloat(colEl.style.width) : th.offsetWidth;
       _drag = { startX: e.clientX, startWidth, colIndex: i, colEl };
@@ -144,18 +119,15 @@ function installColumnResizers() {
         if (_drag.colEl) _drag.colEl.style.width = `${newW}px`;
         if (_drag.guideEl) _drag.guideEl.style.left = `${ev.clientX}px`;
       };
-
       const onUp = () => {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
         document.body.classList.remove('user-select-none');
         if (_drag?.guideEl) _drag.guideEl.remove();
-
         const newWidths = Array.from(cols).map(c => c.style.width ? parseFloat(c.style.width) : null);
         saveStoredWidths(schoolId, termId, classId, newWidths);
         _drag = null;
       };
-
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     });
@@ -187,800 +159,200 @@ function applyDefaultProfileWidthsIfEmpty() {
   if (cols[6]) cols[6].style.width = '120px';
 }
 
-function ci(a){return (a || '').trim().toLowerCase();}
-function sortByName(a,b){return ci(a.name).localeCompare(ci(b.name));}
-function splitBySexAndSort(roster){
-  const males = roster.filter(r => (r.sex || '').toUpperCase() === 'M').sort(sortByName);
-  const females = roster.filter(r => (r.sex || '').toUpperCase() === 'F').sort(sortByName);
-  return [...males, ...females];
-}
+// ---------------------------------------------------------------------------
+// Fixed score columns and per-LRN persistence
+// ---------------------------------------------------------------------------
+const WW_KEYS = Array.from({ length: 10 }, (_, i) => `W${i + 1}`);
+const PT_KEYS = Array.from({ length: 10 }, (_, i) => `PT${i + 1}`);
+const M_KEYS  = Array.from({ length: 10 }, (_, i) => `M${i + 1}`);
+const D_KEYS  = Array.from({ length: 10 }, (_, i) => `D${i + 1}`);
+const ALL_KEYS = [...WW_KEYS, ...PT_KEYS, ...M_KEYS, ...D_KEYS];
 
-function sortExistingRows(){
-  const tbody = document.getElementById('scores-body');
-  const arr = Array.from(tbody.querySelectorAll('tr')).map(row => ({
-    row,
-    name: row.children[0]?.textContent || '',
-    sex: row.children[3]?.textContent || ''
-  }));
-  arr.sort((a,b)=>{
-    const sa=(a.sex||'').toUpperCase();
-    const sb=(b.sex||'').toUpperCase();
-    if(sa!==sb){
-      if(sa==='M') return -1;
-      if(sb==='M') return 1;
+function buildFixedHeaders() {
+  const groupHeader = document.getElementById('group-header');
+  const subHeader = document.getElementById('sub-header');
+  const maxRow = document.getElementById('max-row');
+  if (!groupHeader || !subHeader) return;
+
+  const wwGroup = document.getElementById('ww-group');
+  const ptGroup = document.getElementById('pt-group');
+  const meritGroup = document.getElementById('merit-group');
+  const demeritGroup = document.getElementById('demerit-group');
+
+  if (wwGroup) wwGroup.colSpan = WW_KEYS.length + 1;
+  if (ptGroup) ptGroup.colSpan = PT_KEYS.length + 1;
+  if (meritGroup) meritGroup.colSpan = M_KEYS.length + 1;
+  if (demeritGroup) demeritGroup.colSpan = D_KEYS.length + 1;
+
+  const subHeads = Array.from(subHeader.children);
+  function injectHeaders(startClass, keys, totalHeaderId) {
+    const firstIdx = subHeads.findIndex(th => th.classList.contains(startClass));
+    if (firstIdx === -1) return;
+    const totalIdx = subHeads.findIndex(th => th.id === totalHeaderId);
+    if (totalIdx === -1) return;
+    subHeads[firstIdx].textContent = keys[0];
+    for (let i = firstIdx + 1; i < totalIdx; i++) {
+      subHeader.removeChild(subHeader.children[firstIdx + 1]);
     }
-    return ci(a.name).localeCompare(ci(b.name));
-  });
-  arr.forEach(r=>tbody.appendChild(r.row));
-}
-
-function ensureAddButtons(){
-  const groups=[
-    {id:'ww-group', handler:addWWColumn},
-    {id:'pt-group', handler:addPTColumn},
-    {id:'merit-group', handler:addMeritColumn},
-    {id:'demerit-group', handler:addDemeritColumn}
-  ];
-  groups.forEach(g=>{
-    const header=document.getElementById(g.id);
-    if(!header) return;
-    const existing=header.querySelectorAll('.add-col-btn');
-    let btn;
-    if(existing.length===0){
-      btn=document.createElement('button');
-      btn.type='button';
-      btn.textContent='+';
-      btn.className='add-col-btn';
-      header.appendChild(btn);
-    }else{
-      btn=existing[0];
-      existing.forEach((b,i)=>{ if(i>0) b.remove(); });
+    for (let k = 1; k < keys.length; k++) {
+      const th = document.createElement('th');
+      th.textContent = keys[k];
+      th.className = subHeads[firstIdx].className;
+      subHeader.insertBefore(th, document.getElementById(totalHeaderId));
     }
-    btn.onclick=g.handler;
+  }
+
+  injectHeaders('ww-header', WW_KEYS, 'ww-total-header');
+  injectHeaders('pt-header', PT_KEYS, 'pt-total-header');
+  injectHeaders('merit-header', M_KEYS, 'merit-total-header');
+  injectHeaders('demerit-header', D_KEYS, 'demerit-total-header');
+
+  // maxRow is left untouched (keep existing inputs/placeholders)
+}
+
+function createScoreInputCell(key) {
+  const td = document.createElement('td');
+  const inp = document.createElement('input');
+  inp.type = 'number';
+  inp.inputMode = 'decimal';
+  inp.dataset.key = key;
+  inp.className = 'score-input';
+  td.appendChild(inp);
+  return td;
+}
+
+function createTotalCell() {
+  const td = document.createElement('td');
+  td.className = 'total-cell';
+  td.textContent = '0';
+  return td;
+}
+
+function attachRowListeners(tr) {
+  tr.querySelectorAll('input.score-input').forEach(inp => {
+    inp.addEventListener('input', () => recomputeRowTotals(tr));
   });
 }
 
-function updateRowTotals(row){
-  const sum = sel => Array.from(row.querySelectorAll(sel)).reduce((acc, el) => acc + (parseFloat(el.value) || 0), 0);
-  const wwTotal=row.querySelector('.ww-total');
-  const ptTotal=row.querySelector('.pt-total');
-  const meritTotal=row.querySelector('.merit-total');
-  const demeritTotal=row.querySelector('.demerit-total');
-  if(wwTotal) wwTotal.value=sum('.ww-input');
-  if(ptTotal) ptTotal.value=sum('.pt-input');
-  if(meritTotal) meritTotal.value=sum('.merit-input');
-  if(demeritTotal) demeritTotal.value=sum('.demerit-input');
+function recomputeRowTotals(tr) {
+  function sum(keys) {
+    return keys.reduce((acc, key) => {
+      const input = tr.querySelector(`input[data-key="${key}"]`);
+      const v = input && input.value.trim() !== '' ? Number(input.value) : 0;
+      return acc + (isNaN(v) ? 0 : v);
+    }, 0);
+  }
+  const wwTotalCell = tr.querySelector('td[data-total="WW"]');
+  const ptTotalCell = tr.querySelector('td[data-total="PT"]');
+  const meritTotalCell = tr.querySelector('td[data-total="M"]');
+  const demeritTotalCell = tr.querySelector('td[data-total="D"]');
+
+  if (wwTotalCell) wwTotalCell.textContent = String(sum(WW_KEYS));
+  if (ptTotalCell) ptTotalCell.textContent = String(sum(PT_KEYS));
+  if (meritTotalCell) meritTotalCell.textContent = String(sum(M_KEYS));
+  if (demeritTotalCell) demeritTotalCell.textContent = String(sum(D_KEYS));
 }
 
-function attachRowListeners(row){
-  row.querySelectorAll('.ww-input').forEach(i=>i.addEventListener('input',()=>updateRowTotals(row)));
-  row.querySelectorAll('.pt-input').forEach(i=>i.addEventListener('input',()=>updateRowTotals(row)));
-  row.querySelectorAll('.merit-input').forEach(i=>i.addEventListener('input',()=>updateRowTotals(row)));
-  row.querySelectorAll('.demerit-input').forEach(i=>i.addEventListener('input',()=>updateRowTotals(row)));
-}
-
-function addRowFromRosterEntry({ id: rosterId, name, lrn, birthdate, sex, email, guardianContact, linkedUid, className }) {
-  const tbody = document.getElementById('scores-body');
+function addRowFromRosterEntry({ id, name, lrn, birthdate, sex, className, linkedUid }) {
   const tr = document.createElement('tr');
-  tr.dataset.rosterId = rosterId || '';
-  tr.dataset.email = email || '';
-  tr.dataset.guardian = guardianContact || '';
+  tr.dataset.lrn = String(lrn || '');
 
   const tdName = document.createElement('td'); tdName.textContent = name || '';
   const tdLrn = document.createElement('td'); tdLrn.textContent = lrn || '';
   const tdDob = document.createElement('td'); tdDob.textContent = birthdate || '';
   const tdSex = document.createElement('td'); tdSex.textContent = (sex || '').toUpperCase();
-  const tdClass = document.createElement('td'); tdClass.innerHTML = className ? `<span class="badge">${className}</span>` : '';
+  const tdClass = document.createElement('td'); tdClass.textContent = className || '';
   const tdLink = document.createElement('td'); tdLink.textContent = linkedUid ? 'Yes' : 'No';
-
-  const tdActions = document.createElement('td');
-  tdActions.className = 'actions-cell';
-  const editBtn = document.createElement('button'); editBtn.type = 'button'; editBtn.className = 'link-btn'; editBtn.textContent = 'Edit';
-  const delBtn = document.createElement('span');
-  delBtn.className = 'danger-link';
-  delBtn.textContent = 'Delete';
-  tdActions.append(editBtn, delBtn);
+  const tdActions = document.createElement('td'); tdActions.textContent = '';
 
   tr.append(tdName, tdLrn, tdDob, tdSex, tdClass, tdLink, tdActions);
 
-  for (let i = 0; i < wwCount; i++) {
-    const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'number'; inp.className = 'ww-input';
-    td.appendChild(inp); tr.appendChild(td);
-  }
-  const tdWWTotal = document.createElement('td');
-  const wwTotalInp = document.createElement('input');
-  wwTotalInp.type = 'number'; wwTotalInp.className = 'ww-total'; wwTotalInp.readOnly = true;
-  tdWWTotal.appendChild(wwTotalInp); tr.appendChild(tdWWTotal);
+  WW_KEYS.forEach(k => tr.appendChild(createScoreInputCell(k)));
+  const wwTot = createTotalCell(); wwTot.dataset.total = 'WW'; tr.appendChild(wwTot);
 
-  for (let i = 0; i < ptCount; i++) {
-    const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'number'; inp.className = 'pt-input';
-    td.appendChild(inp); tr.appendChild(td);
-  }
-  const tdPTTotal = document.createElement('td');
-  const ptTotalInp = document.createElement('input');
-  ptTotalInp.type = 'number'; ptTotalInp.className = 'pt-total'; ptTotalInp.readOnly = true;
-  tdPTTotal.appendChild(ptTotalInp); tr.appendChild(tdPTTotal);
+  PT_KEYS.forEach(k => tr.appendChild(createScoreInputCell(k)));
+  const ptTot = createTotalCell(); ptTot.dataset.total = 'PT'; tr.appendChild(ptTot);
 
-  for (let i = 0; i < meritCount; i++) {
-    const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'number'; inp.className = 'merit-input';
-    td.appendChild(inp); tr.appendChild(td);
-  }
-  const tdMeritTotal = document.createElement('td');
-  const meritTotalInp = document.createElement('input');
-  meritTotalInp.type = 'number'; meritTotalInp.className = 'merit-total'; meritTotalInp.readOnly = true;
-  tdMeritTotal.appendChild(meritTotalInp); tr.appendChild(tdMeritTotal);
+  M_KEYS.forEach(k => tr.appendChild(createScoreInputCell(k)));
+  const mTot = createTotalCell(); mTot.dataset.total = 'M'; tr.appendChild(mTot);
 
-  for (let i = 0; i < demeritCount; i++) {
-    const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'number'; inp.className = 'demerit-input';
-    td.appendChild(inp); tr.appendChild(td);
-  }
-  const tdDemeritTotal = document.createElement('td');
-  const demTotalInp = document.createElement('input');
-  demTotalInp.type = 'number'; demTotalInp.className = 'demerit-total'; demTotalInp.readOnly = true;
-  tdDemeritTotal.appendChild(demTotalInp); tr.appendChild(tdDemeritTotal);
+  D_KEYS.forEach(k => tr.appendChild(createScoreInputCell(k)));
+  const dTot = createTotalCell(); dTot.dataset.total = 'D'; tr.appendChild(dTot);
 
-  tbody.appendChild(tr);
+  document.getElementById('scores-body').appendChild(tr);
   attachRowListeners(tr);
-  updateRowTotals(tr);
-
-  editBtn.addEventListener('click', () => enterEditMode(tr, { name, lrn, birthdate, sex, email, guardianContact }));
-  delBtn.addEventListener('click', () => attemptDeleteStudent(tr, { linkedUid }));
 }
 
-function enterEditMode(tr, initial) {
-  if (tr.dataset.editing === '1') return;
-  tr.dataset.editing = '1';
-
-  const [tdName, tdLrn, tdDob, tdSex, tdClass, tdLink, tdActions] = tr.children;
-
-  const nameInp = document.createElement('input'); nameInp.className = 'inline-input'; nameInp.value = tdName.textContent.trim();
-  const lrnInp = document.createElement('input'); lrnInp.className = 'inline-input'; lrnInp.value = tdLrn.textContent.trim();
-  const dobInp = document.createElement('input'); dobInp.type = 'date'; dobInp.className = 'inline-input'; dobInp.value = initial.birthdate || '';
-  const sexSel = document.createElement('select'); sexSel.className = 'inline-input';
-  sexSel.innerHTML = '<option value="">Sex</option><option value="M">M</option><option value="F">F</option>';
-  sexSel.value = (initial.sex || '').toUpperCase();
-
-  tdName.replaceChildren(nameInp);
-  tdLrn.replaceChildren(lrnInp);
-  tdDob.replaceChildren(dobInp);
-  tdSex.replaceChildren(sexSel);
-
-  tdActions.innerHTML = '';
-  const emailInp = document.createElement('input'); emailInp.placeholder = 'Email (optional)'; emailInp.className = 'inline-input'; emailInp.value = initial.email || '';
-  const guardInp = document.createElement('input'); guardInp.placeholder = 'Guardian Contact (optional)'; guardInp.className = 'inline-input'; guardInp.value = initial.guardianContact || '';
-  const saveBtn = document.createElement('button'); saveBtn.type = 'button'; saveBtn.className = 'link-btn'; saveBtn.textContent = 'Save';
-  const cancelBtn = document.createElement('button'); cancelBtn.type = 'button'; cancelBtn.className = 'link-btn'; cancelBtn.textContent = 'Cancel';
-  tdActions.append(emailInp, guardInp, saveBtn, cancelBtn);
-
-  cancelBtn.addEventListener('click', () => {
-    tr.dataset.editing = '0';
-    tdName.textContent = initial.name || '';
-    tdLrn.textContent = initial.lrn || '';
-    tdDob.textContent = initial.birthdate || '';
-    tdSex.textContent = (initial.sex || '').toUpperCase();
-    tdActions.innerHTML = '';
-    const editBtn = document.createElement('button'); editBtn.type = 'button'; editBtn.className = 'link-btn'; editBtn.textContent = 'Edit';
-    const delBtn = document.createElement('span');
-    delBtn.className = 'danger-link';
-    delBtn.textContent = 'Delete';
-    tdActions.append(editBtn, delBtn);
-    editBtn.addEventListener('click', () => enterEditMode(tr, initial));
-    delBtn.addEventListener('click', () => attemptDeleteStudent(tr, { linkedUid: tr.children[5].textContent.trim() === 'Yes' }));
-  });
-
-  saveBtn.addEventListener('click', async () => {
-    const rosterId = tr.dataset.rosterId;
-    if (!rosterId) return alert('Missing rosterId.');
-    const lrnVal = lrnInp.value.trim();
-    if (!/^\d{12}$/.test(lrnVal)) return alert('LRN must be 12 digits.');
-    const sexVal = (sexSel.value || '').toUpperCase();
-    if (sexVal && !['M','F'].includes(sexVal)) return alert('Sex must be M or F.');
-
-    const ref = doc(db,'schools',schoolId,'terms',termId,'classes',classId,'roster',rosterId);
-    await updateDoc(ref, {
-      name: nameInp.value.trim(),
-      lrn: lrnVal,
-      birthdate: dobInp.value || '',
-      sex: sexVal,
-      email: emailInp.value.trim() || null,
-      guardianContact: guardInp.value.trim() || null,
-      updatedAt: Date.now()
-    });
-
-    tr.dataset.editing = '0';
-    tdName.textContent = nameInp.value.trim();
-    tdLrn.textContent = lrnVal;
-    tdDob.textContent = dobInp.value || '';
-    tdSex.textContent = sexVal;
-    tr.dataset.email = emailInp.value.trim() || '';
-    tr.dataset.guardian = guardInp.value.trim() || '';
-    tdActions.innerHTML = '';
-    const editBtn = document.createElement('button'); editBtn.type = 'button'; editBtn.className = 'link-btn'; editBtn.textContent = 'Edit';
-    const delBtn = document.createElement('span');
-    delBtn.className = 'danger-link';
-    delBtn.textContent = 'Delete';
-    tdActions.append(editBtn, delBtn);
-    editBtn.addEventListener('click', () => enterEditMode(tr, {
-      name: tdName.textContent, lrn: tdLrn.textContent, birthdate: tdDob.textContent, sex: tdSex.textContent,
-      email: emailInp.value.trim() || '', guardianContact: guardInp.value.trim() || ''
-    }));
-    delBtn.addEventListener('click', () => attemptDeleteStudent(tr, { linkedUid: tr.children[5].textContent.trim() === 'Yes' }));
-    sortExistingRows();
-    updateRowTotals(tr);
-  });
-}
-
-async function attemptDeleteStudent(tr, { linkedUid }) {
-  const name = tr.children[0]?.textContent?.trim() || 'this student';
-
-  // Block if linked
-  const isLinked = (tr.children[5]?.textContent?.trim() === 'Yes') || !!linkedUid;
-  if (isLinked) {
-    alert(`Cannot delete "${name}": student is linked to an account.`);
-    return;
-  }
-
-  // Warn if scores exist
-  const hasScores = rowHasAnyScores(tr);
-  if (hasScores) {
-    const proceed = confirm(`"${name}" has scores entered. Deleting will remove them. Continue?`);
-    if (!proceed) return;
-  }
-
-  // Require typing DELETE
-  const typed = prompt(`Type DELETE to confirm removing "${name}" from this class:`);
-  if (typed !== 'DELETE') {
-    alert('Deletion cancelled.');
-    return;
-  }
-
-  const rosterId = tr.dataset.rosterId;
-  if (!rosterId) return alert('Missing rosterId.');
-
-  // Delete Firestore doc
-  const ref = doc(db,'schools',schoolId,'terms',termId,'classes',classId,'roster',rosterId);
-  await deleteDoc(ref);
-
-  // Remove row from UI
-  tr.remove();
-}
-
-function rowHasAnyScores(tr) {
-  const cells = Array.from(tr.children).slice(7); // skip profile cells
-  return cells.some(td => {
-    const inp = td.querySelector('input');
-    return inp && inp.value.trim() !== '';
-  });
-}
-
-function addWWColumn(){
-  wwCount++;
-  const subHeader=document.getElementById('sub-header');
-  const totalHeader=document.getElementById('ww-total-header');
-  const th=document.createElement('th');
-  th.className='ww-header';
-  th.textContent=`W${wwCount}`;
-  subHeader.insertBefore(th,totalHeader);
-  document.getElementById('ww-group').colSpan=wwCount+1;
-  const maxRow=document.getElementById('max-row');
-  const placeholder=document.getElementById('ww-max-placeholder');
-  const thMax=document.createElement('th');
-  const inputMax=document.createElement('input');
-  inputMax.type='number';
-  inputMax.className='ww-max';
-  thMax.appendChild(inputMax);
-  maxRow.insertBefore(thMax, placeholder);
-  document.querySelectorAll('#scores-body tr').forEach(row=>{
-    const totalCell=row.querySelector('.ww-total').parentElement;
-    const td=document.createElement('td');
-    const input=document.createElement('input');
-    input.type='number';
-    input.className='ww-input';
-    td.appendChild(input);
-    row.insertBefore(td,totalCell);
-    input.addEventListener('input',()=>updateRowTotals(row));
-  });
-  ensureColgroupMatchesHeaders();
-  installColumnResizers();
-}
-
-function addPTColumn(){
-  ptCount++;
-  const subHeader=document.getElementById('sub-header');
-  const totalHeader=document.getElementById('pt-total-header');
-  const th=document.createElement('th');
-  th.className='pt-header';
-  th.textContent=`PT${ptCount}`;
-  subHeader.insertBefore(th,totalHeader);
-  document.getElementById('pt-group').colSpan=ptCount+1;
-  const maxRow=document.getElementById('max-row');
-  const placeholder=document.getElementById('pt-max-placeholder');
-  const thMax=document.createElement('th');
-  const inputMax=document.createElement('input');
-  inputMax.type='number';
-  inputMax.className='pt-max';
-  thMax.appendChild(inputMax);
-  maxRow.insertBefore(thMax, placeholder);
-  document.querySelectorAll('#scores-body tr').forEach(row=>{
-    const totalCell=row.querySelector('.pt-total').parentElement;
-    const td=document.createElement('td');
-    const input=document.createElement('input');
-    input.type='number';
-    input.className='pt-input';
-    td.appendChild(input);
-    row.insertBefore(td,totalCell);
-    input.addEventListener('input',()=>updateRowTotals(row));
-  });
-  ensureColgroupMatchesHeaders();
-  installColumnResizers();
-}
-
-function addMeritColumn(){
-  meritCount++;
-  const subHeader=document.getElementById('sub-header');
-  const totalHeader=document.getElementById('merit-total-header');
-  const th=document.createElement('th');
-  th.className='merit-header';
-  th.textContent=`M${meritCount}`;
-  subHeader.insertBefore(th,totalHeader);
-  document.getElementById('merit-group').colSpan=meritCount+1;
-  const maxRow=document.getElementById('max-row');
-  const placeholder=document.getElementById('merit-max-placeholder');
-  const thMax=document.createElement('th');
-  const inputMax=document.createElement('input');
-  inputMax.type='text';
-  inputMax.className='merit-label';
-  inputMax.maxLength=4;
-  thMax.appendChild(inputMax);
-  maxRow.insertBefore(thMax,placeholder);
-  document.querySelectorAll('#scores-body tr').forEach(row=>{
-    const totalCell=row.querySelector('.merit-total').parentElement;
-    const td=document.createElement('td');
-    const input=document.createElement('input');
-    input.type='number';
-    input.className='merit-input';
-    td.appendChild(input);
-    row.insertBefore(td,totalCell);
-    input.addEventListener('input',()=>updateRowTotals(row));
-  });
-  ensureColgroupMatchesHeaders();
-  installColumnResizers();
-}
-
-function addDemeritColumn(){
-  demeritCount++;
-  const subHeader=document.getElementById('sub-header');
-  const totalHeader=document.getElementById('demerit-total-header');
-  const th=document.createElement('th');
-  th.className='demerit-header';
-  th.textContent=`D${demeritCount}`;
-  subHeader.insertBefore(th,totalHeader);
-  document.getElementById('demerit-group').colSpan=demeritCount+1;
-  const maxRow=document.getElementById('max-row');
-  const placeholder=document.getElementById('demerit-max-placeholder');
-  const thMax=document.createElement('th');
-  const inputMax=document.createElement('input');
-  inputMax.type='text';
-  inputMax.className='demerit-label';
-  inputMax.maxLength=4;
-  thMax.appendChild(inputMax);
-  maxRow.insertBefore(thMax, placeholder);
-  document.querySelectorAll('#scores-body tr').forEach(row=>{
-    const totalCell=row.querySelector('.demerit-total').parentElement;
-    const td=document.createElement('td');
-    const input=document.createElement('input');
-    input.type='number';
-    input.className='demerit-input';
-    td.appendChild(input);
-    row.insertBefore(td,totalCell);
-    input.addEventListener('input',()=>updateRowTotals(row));
-  });
-  ensureColgroupMatchesHeaders();
-  installColumnResizers();
-}
-
-function applyHeaderConfig(cfg){
-  const wwArr=Array.isArray(cfg.ww)?cfg.ww:[];
-  const ptArr=Array.isArray(cfg.pt)?cfg.pt:[];
-  const meritArr=Array.isArray(cfg.merit)?cfg.merit:[];
-  const demArr=Array.isArray(cfg.demerit)?cfg.demerit:[];
-  for(let i=1;i<wwArr.length;i++) addWWColumn();
-  for(let i=1;i<ptArr.length;i++) addPTColumn();
-  for(let i=1;i<meritArr.length;i++) addMeritColumn();
-  for(let i=1;i<demArr.length;i++) addDemeritColumn();
-  const wwHeaders=document.querySelectorAll('.ww-header');
-  const wwMax=document.querySelectorAll('.ww-max');
-  wwArr.forEach((o,i)=>{
-    if(wwHeaders[i]) wwHeaders[i].textContent=o.key || `W${i+1}`;
-    if(wwMax[i]) wwMax[i].value=o.max ?? '';
-  });
-  const ptHeaders=document.querySelectorAll('.pt-header');
-  const ptMax=document.querySelectorAll('.pt-max');
-  ptArr.forEach((o,i)=>{
-    if(ptHeaders[i]) ptHeaders[i].textContent=o.key || `PT${i+1}`;
-    if(ptMax[i]) ptMax[i].value=o.max ?? '';
-  });
-  const meritHeaders=document.querySelectorAll('.merit-header');
-  const meritLabels=document.querySelectorAll('.merit-label');
-  meritArr.forEach((o,i)=>{
-    if(meritHeaders[i]) meritHeaders[i].textContent=o.key || `M${i+1}`;
-    if(meritLabels[i]) meritLabels[i].value=o.label ?? '';
-  });
-  const demHeaders=document.querySelectorAll('.demerit-header');
-  const demLabels=document.querySelectorAll('.demerit-label');
-  demArr.forEach((o,i)=>{
-    if(demHeaders[i]) demHeaders[i].textContent=o.key || `D${i+1}`;
-    if(demLabels[i]) demLabels[i].value=o.label ?? '';
-  });
-  wwCount=wwArr.length || 1;
-  ptCount=ptArr.length || 1;
-  meritCount=meritArr.length || 1;
-  demeritCount=demArr.length || 1;
-  const wg=document.getElementById('ww-group'); if(wg) wg.colSpan=wwCount+1;
-  const pg=document.getElementById('pt-group'); if(pg) pg.colSpan=ptCount+1;
-  const mg=document.getElementById('merit-group'); if(mg) mg.colSpan=meritCount+1;
-  const dg=document.getElementById('demerit-group'); if(dg) dg.colSpan=demeritCount+1;
-  ensureAddButtons();
-}
-
-async function loadHeaderConfig(){
-  if(!current.subjectKey || !current.sectionKey) { ensureAddButtons(); return; }
-  const ref=doc(db,'schools',schoolId,'terms',termId,'subjects',current.subjectKey,'sections',current.sectionKey,'config');
-  const snap=await getDoc(ref);
-  if(snap.exists()){
-    applyHeaderConfig(snap.data());
-  } else {
-    wwCount=1; ptCount=1; meritCount=1; demeritCount=1;
-    const wg=document.getElementById('ww-group'); if(wg) wg.colSpan=2;
-    const pg=document.getElementById('pt-group'); if(pg) pg.colSpan=2;
-    const mg=document.getElementById('merit-group'); if(mg) mg.colSpan=2;
-    const dg=document.getElementById('demerit-group'); if(dg) dg.colSpan=2;
-    ensureAddButtons();
-  }
-}
-
-async function fetchClassMeta(){
-  const classRef=doc(db,'schools',schoolId,'terms',termId,'classes',classId);
-  const classSnap=await getDoc(classRef);
-  if(classSnap.exists()){
-    const c=classSnap.data();
-    current.className=c.name || classId;
-    current.subject=c.subject || null;
-    current.section=c.section || null;
-    current.gradeLevel=c.gradeLevel || null;
-  }else{
-    current.className=classId;
-  }
-  if(current.gradeLevel && current.subject){
-    current.subjectKey=slug(`${current.gradeLevel}-${current.subject}`);
-  }
-  if(current.section){
-    current.sectionKey=slug(current.section);
-  }
-
-  let termText = `Term: ${termId}`;
-  const termRef = doc(db,'schools',schoolId,'terms',termId);
-  const termSnap = await getDoc(termRef);
-  if(termSnap.exists()){
-    const t = termSnap.data();
-    if(t.schoolYear && t.termLabel){
-      termText = `Term: S.Y.${t.schoolYear} - ${t.termLabel}`;
-    } else if(t.name){
-      const parts = String(t.name).split('|').map(s=>s.trim());
-      termText = parts.length === 2 ? `Term: ${parts[0]} - ${parts[1]}` : `Term: ${t.name}`;
-    }
-  }
-
-  document.getElementById('class-path').textContent = `Class: ${current.className} • Subject: ${current.subject || 'Unknown'} • ${termText}`;
-}
-
-async function fetchRosterForClass(cId){
-  const rSnap=await getDocs(collection(db,'schools',schoolId,'terms',termId,'classes',cId,'roster'));
-  return rSnap.docs.map(d=>({ id:d.id, ...d.data(), classId:cId }));
-}
-
-async function fetchClassesSameSubject(){
-  if(!current.subject) return [];
-  const classesSnap=await getDocs(collection(db,'schools',schoolId,'terms',termId,'classes'));
-  const arr=classesSnap.docs.map(d=>({id:d.id, ...d.data()}));
-  return arr.filter(c => (c.subject || '') === current.subject);
-}
-
-async function loadAndRenderSingleClass(){
-  const scoresRef=doc(db,'schools',schoolId,'terms',termId,'classes',classId,'scores',auth.currentUser.uid);
-  const sSnap=await getDoc(scoresRef);
-  const tbody=document.getElementById('scores-body');
-  tbody.innerHTML='';
-  if(sSnap.exists()){
-    const parser=document.createElement('table');
-    parser.innerHTML=sSnap.data().tableHTML || '';
-    const savedBody=parser.querySelector('#scores-body');
-    if(savedBody) tbody.innerHTML=savedBody.innerHTML;
-  }
-  document.querySelectorAll('#scores-body tr').forEach(row=>{
-    attachRowListeners(row);
-    updateRowTotals(row);
-    const initial={
-      name: row.children[0]?.textContent.trim() || '',
-      lrn: row.children[1]?.textContent.trim() || '',
-      birthdate: row.children[2]?.textContent.trim() || '',
-      sex: row.children[3]?.textContent.trim() || '',
-      email: row.dataset.email || '',
-      guardianContact: row.dataset.guardian || ''
-    };
-    const editBtn=row.children[6]?.querySelector('.link-btn');
-    const delBtn=row.children[6]?.querySelector('.danger-link');
-    if(editBtn) editBtn.addEventListener('click',()=>enterEditMode(row,initial));
-    if(delBtn) delBtn.addEventListener('click',()=>attemptDeleteStudent(row,{linkedUid: row.children[5]?.textContent.trim()==='Yes'}));
-  });
-  const roster=await fetchRosterForClass(classId);
-  const existingLRNs=new Set(Array.from(document.querySelectorAll('#scores-body tr td:nth-child(2)')).map(td=>td.textContent.trim()));
-  const missing=roster.filter(r=>!existingLRNs.has(String(r.lrn||'')));
-  if(missing.length){
-    const ordered=splitBySexAndSort(missing);
-    for(const m of ordered){
-      addRowFromRosterEntry({
-        id:m.id,
-        name:m.name,
-        lrn:m.lrn,
-        birthdate:m.birthdate,
-        sex:m.sex,
-        email:m.email,
-        guardianContact:m.guardianContact,
-        linkedUid:m.linkedUid || null,
-        className:current.className
-      });
-    }
-  }
-  sortExistingRows();
-  ensureAddButtons();
-  ensureColgroupMatchesHeaders();
-  applyDefaultProfileWidthsIfEmpty();
-  installColumnResizers();
-}
-
-async function loadAndRenderMerged(subjectClasses, selected){
-  let classesToLoad=[];
-  if(selected==='__ALL__') classesToLoad=subjectClasses;
-  else classesToLoad=subjectClasses.filter(c=>c.id===selected);
-  const all=[];
-  for(const c of classesToLoad){
-    const roster=await fetchRosterForClass(c.id);
-    const className=c.name || c.id;
-    roster.forEach(x=>all.push({...x, className}));
-  }
-  const seen=new Set();
-  const merged=[];
-  for(const s of all){
-    const key=String(s.lrn || '');
-    if(!seen.has(key)){
-      seen.add(key);
-      merged.push(s);
-    }
-  }
-  const ordered=splitBySexAndSort(merged);
-  document.querySelector('#scores-body').innerHTML='';
-  for(const s of ordered){
+async function loadRosterRows() {
+  const rosterSnap = await getDocs(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'roster'));
+  const rows = rosterSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  rows.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
+  for (const r of rows) {
     addRowFromRosterEntry({
-      id: s.id,
-      name: s.name,
-      lrn: s.lrn,
-      birthdate: s.birthdate,
-      sex: s.sex,
-      email: s.email,
-      guardianContact: s.guardianContact,
-      linkedUid: s.linkedUid || null,
-      className: s.className
+      id: r.id,
+      name: r.name,
+      lrn: r.lrn,
+      birthdate: r.birthdate,
+      sex: r.sex,
+      className: current.className || '',
+      linkedUid: r.linkedUid || null
     });
   }
-  ensureAddButtons();
-  ensureColgroupMatchesHeaders();
-  applyDefaultProfileWidthsIfEmpty();
-  installColumnResizers();
 }
 
-const showAllChk=document.getElementById('show-all-sections');
-const sectionSelect=document.getElementById('section-select');
+async function loadScoresByLRN() {
+  const snap = await getDocs(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'scoresByLRN'));
+  const map = new Map();
+  snap.forEach(docSnap => { map.set(String(docSnap.id), docSnap.data()); });
 
-async function refreshFilterUI(){
-  if(!showAllChk.checked){
-    sectionSelect.classList.add('hidden');
-    await loadAndRenderSingleClass();
-    return;
-  }
-  sectionSelect.classList.remove('hidden');
-  const classes=await fetchClassesSameSubject();
-  classes.sort((a,b)=>ci(a.name).localeCompare(ci(b.name)));
-  sectionSelect.innerHTML='';
-  const allOpt=document.createElement('option'); allOpt.value='__ALL__'; allOpt.textContent='All sections';
-  sectionSelect.appendChild(allOpt);
-  for(const c of classes){
-    const opt=document.createElement('option');
-    opt.value=c.id; opt.textContent=c.name || c.id;
-    sectionSelect.appendChild(opt);
-  }
-  sectionSelect.value='__ALL__';
-  await loadAndRenderMerged(classes,'__ALL__');
-}
-
-showAllChk.addEventListener('change', refreshFilterUI);
-sectionSelect.addEventListener('change', async e=>{
-  if(!showAllChk.checked){
-    await loadAndRenderSingleClass();
-    return;
-  }
-  const classes=await fetchClassesSameSubject();
-  classes.sort((a,b)=>ci(a.name).localeCompare(ci(b.name)));
-  await loadAndRenderMerged(classes, e.target.value);
-});
-
-function validLRN(v){ return /^\d{12}$/.test(v); }
-function validDate(v){ return /^\d{4}-\d{2}-\d{2}$/.test(v); }
-
-document.getElementById('add-student-form').addEventListener('submit', async e=>{
-  e.preventDefault();
-  const name=document.getElementById('student-name').value.trim();
-  const lrn=document.getElementById('student-lrn').value.trim();
-  const birthdate=document.getElementById('student-birthdate').value.trim();
-  const sex=document.getElementById('student-sex').value;
-  const email=document.getElementById('student-email').value.trim() || null;
-  const guardianContact=document.getElementById('guardian-contact').value.trim() || null;
-  if(!name || !validLRN(lrn) || !validDate(birthdate) || !sex){ alert('Invalid input'); return; }
-  const rosterRef=doc(collection(db,'schools',schoolId,'terms',termId,'classes',classId,'roster'));
-  await setDoc(rosterRef,{ name, lrn, birthdate, sex, email, guardianContact, linkedUid: null, createdAt: Date.now() });
-  if(showAllChk.checked){
-    await refreshFilterUI();
-  } else {
-    addRowFromRosterEntry({ id: rosterRef.id, name, lrn, birthdate, sex, email, guardianContact, linkedUid: null, className: current.className });
-    sortExistingRows();
-  }
-  e.target.reset();
-});
-
-const saveBtnEl = document.getElementById('save');
-saveBtnEl.addEventListener('click', async ()=>{
-  if(showAllChk.checked){
-    console.info('Saving to current class only.');
-  }
-
-  const originalText = saveBtnEl.textContent;
-  saveBtnEl.disabled = true;
-  saveBtnEl.textContent = 'Saving...';
-  const wwHeaders=document.querySelectorAll('.ww-header');
-  const wwMax=document.querySelectorAll('.ww-max');
-  const wwInclude=[]; const wwArr=[];
-  wwHeaders.forEach((th,i)=>{
-    const key=th.textContent.trim();
-    const maxVal=parseFloat(wwMax[i]?.value);
-    let include=!isNaN(maxVal);
-    if(!include){
-      document.querySelectorAll('#scores-body tr').some(row=>{
-        const inp=row.querySelectorAll('.ww-input')[i];
-        if(inp && inp.value.trim()!==''){include=true; return true;}
-      });
-    }
-    wwInclude[i]=include;
-    if(include) wwArr.push({key, max:isNaN(maxVal)?null:maxVal});
-  });
-
-  const ptHeaders=document.querySelectorAll('.pt-header');
-  const ptMax=document.querySelectorAll('.pt-max');
-  const ptInclude=[]; const ptArr=[];
-  ptHeaders.forEach((th,i)=>{
-    const key=th.textContent.trim();
-    const maxVal=parseFloat(ptMax[i]?.value);
-    let include=!isNaN(maxVal);
-    if(!include){
-      document.querySelectorAll('#scores-body tr').some(row=>{
-        const inp=row.querySelectorAll('.pt-input')[i];
-        if(inp && inp.value.trim()!==''){include=true; return true;}
-      });
-    }
-    ptInclude[i]=include;
-    if(include) ptArr.push({key, max:isNaN(maxVal)?null:maxVal});
-  });
-
-  const meritHeaders=document.querySelectorAll('.merit-header');
-  const meritLabels=document.querySelectorAll('.merit-label');
-  const meritInclude=[]; const meritArr=[];
-  meritHeaders.forEach((th,i)=>{
-    const key=th.textContent.trim();
-    const label=meritLabels[i]?.value.trim();
-    let include=!!label;
-    if(!include){
-      document.querySelectorAll('#scores-body tr').some(row=>{
-        const inp=row.querySelectorAll('.merit-input')[i];
-        if(inp && inp.value.trim()!==''){include=true; return true;}
-      });
-    }
-    meritInclude[i]=include;
-    if(include) meritArr.push({key, label:label || null});
-  });
-
-  const demHeaders=document.querySelectorAll('.demerit-header');
-  const demLabels=document.querySelectorAll('.demerit-label');
-  const demInclude=[]; const demeritArr=[];
-  demHeaders.forEach((th,i)=>{
-    const key=th.textContent.trim();
-    const label=demLabels[i]?.value.trim();
-    let include=!!label;
-    if(!include){
-      document.querySelectorAll('#scores-body tr').some(row=>{
-        const inp=row.querySelectorAll('.demerit-input')[i];
-        if(inp && inp.value.trim()!==''){include=true; return true;}
-      });
-    }
-    demInclude[i]=include;
-    if(include) demeritArr.push({key, label:label || null});
-  });
-
-  const table=document.getElementById('scores-table');
-  const clone=table.cloneNode(true);
-  clone.querySelectorAll('.th-resizer').forEach(el=>el.remove());
-  clone.querySelectorAll('.th-resizable').forEach(el=>el.classList.remove('th-resizable'));
-  const bodyRows=clone.querySelectorAll('#scores-body tr');
-
-  function prune(headersSel,inputSel,includeArr,maxSel,groupSel){
-    const headers=clone.querySelectorAll(headersSel);
-    const maxes=clone.querySelectorAll(maxSel);
-    for(let i=headers.length-1;i>=0;i--){
-      if(!includeArr[i]){
-        headers[i].remove();
-        if(maxes[i]) maxes[i].parentElement.remove();
-        bodyRows.forEach(r=>{ const inputs=r.querySelectorAll(inputSel); if(inputs[i]) inputs[i].parentElement.remove(); });
+  document.querySelectorAll('#scores-body tr').forEach(tr => {
+    const lrn = tr.dataset.lrn;
+    if (!lrn) return;
+    const data = map.get(String(lrn));
+    if (!data) return;
+    ALL_KEYS.forEach(key => {
+      const input = tr.querySelector(`input[data-key="${key}"]`);
+      if (!input) return;
+      const v = data[key];
+      if (v === 0 || v === '0' || (typeof v === 'number' && !isNaN(v))) {
+        input.value = String(v);
+      } else if (typeof v === 'string' && v.trim() !== '') {
+        input.value = v;
       }
-    }
-    const g=clone.querySelector(groupSel);
-    if(g) g.colSpan = includeArr.filter(x=>x).length + 1;
+    });
+    recomputeRowTotals(tr);
+  });
+}
+
+document.getElementById('save').addEventListener('click', async () => {
+  const batch = writeBatch(db);
+  const tbody = document.getElementById('scores-body');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+
+  for (const tr of rows) {
+    const lrn = (tr.dataset.lrn || '').trim();
+    if (!lrn) continue;
+    const payload = { updatedAt: Date.now(), teacherUid: auth.currentUser?.uid || null };
+    ALL_KEYS.forEach(key => {
+      const input = tr.querySelector(`input[data-key="${key}"]`);
+      if (!input) return;
+      const raw = input.value.trim();
+      if (raw === '') {
+        // omit field
+      } else {
+        const num = Number(raw);
+        payload[key] = isNaN(num) ? raw : num;
+      }
+    });
+    const ref = doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'scoresByLRN', lrn);
+    batch.set(ref, payload, { merge: true });
   }
 
-  prune('.ww-header','.ww-input',wwInclude,'.ww-max','#ww-group');
-  prune('.pt-header','.pt-input',ptInclude,'.pt-max','#pt-group');
-  prune('.merit-header','.merit-input',meritInclude,'.merit-label','#merit-group');
-  prune('.demerit-header','.demerit-input',demInclude,'.demerit-label','#demerit-group');
-
-  try {
-    const tableHTML=clone.innerHTML;
-    const ref=doc(db,'schools',schoolId,'terms',termId,'classes',classId,'scores',auth.currentUser.uid);
-    await setDoc(ref,{ tableHTML, wwCount: wwArr.length, ptCount: ptArr.length, meritCount: meritArr.length, demeritCount: demeritArr.length, updatedAt: Date.now() });
-
-    if(current.subjectKey && current.sectionKey){
-      const cfgRef=doc(db,'schools',schoolId,'terms',termId,'subjects',current.subjectKey,'sections',current.sectionKey,'config');
-      await setDoc(cfgRef,{
-        subject: current.subject || null,
-        section: current.section || null,
-        gradeLevel: current.gradeLevel || null,
-        ww: wwArr,
-        pt: ptArr,
-        merit: meritArr,
-        demerit: demeritArr,
-        updatedBy: auth.currentUser.uid,
-        updatedAt: Date.now()
-      },{merge:true});
-    }
-
-    saveBtnEl.textContent = 'Saved!';
-  } catch (err) {
-    console.error('Error saving scores', err);
-    alert('Failed to save.');
-    saveBtnEl.textContent = originalText;
-  } finally {
-    setTimeout(()=>{
-      saveBtnEl.textContent = originalText;
-      saveBtnEl.disabled = false;
-    },2000);
-  }
+  await batch.commit();
+  alert('Scores saved by LRN.');
 });
 
-document.getElementById('download').addEventListener('click', ()=>{
+document.getElementById('download').addEventListener('click', () => {
   const rows = Array.from(document.querySelectorAll('#scores-table tr')).map(tr =>
     Array.from(tr.children).map(td => td.querySelector('input') ? td.querySelector('input').value : td.textContent)
   );
@@ -992,15 +364,31 @@ document.getElementById('download').addEventListener('click', ()=>{
   link.click();
 });
 
-await new Promise(resolve=>{
-  const unsub=onAuthStateChanged(auth,user=>{
-    if(user){unsub(); resolve();}
-  });
-});
+async function initScoreTable() {
+  const classRef = doc(db, 'schools', schoolId, 'terms', termId, 'classes', classId);
+  const classSnap = await getDoc(classRef);
+  if (classSnap.exists()) {
+    const data = classSnap.data();
+    current.className = data.name || '';
+    const pathEl = document.getElementById('class-path');
+    if (pathEl) {
+      const subject = data.subject || '';
+      const section = data.section || '';
+      pathEl.textContent = `${subject} ${section}`.trim();
+    }
+  }
 
-await fetchClassMeta();
-await loadHeaderConfig();
-if(showAllChk) showAllChk.checked=false;
-if(sectionSelect) sectionSelect.classList.add('hidden');
-await loadAndRenderSingleClass();
+  buildFixedHeaders();
+  await loadRosterRows();
+  await loadScoresByLRN();
+  ensureColgroupMatchesHeaders();
+  applyDefaultProfileWidthsIfEmpty();
+  installColumnResizers();
+}
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    initScoreTable();
+  }
+});
 
