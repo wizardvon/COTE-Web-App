@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teacher Scores</title>
+  <title>Teacher Admin</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,62 +20,100 @@
     <a id="login-link" href="login.html">Login</a>
     <a id="logout-link" href="#" style="display:none;">Logout</a>
   </nav>
-  <div id="admin-panel" class="card">
-    <h2>School Admin</h2>
 
-    <!-- Create School (always visible) -->
-    <form id="create-school-form">
-      <input id="school-name" placeholder="School Name" required>
-      <input id="school-address" placeholder="Address" required>
-      <input id="school-logo-url" placeholder="Logo URL">
-      <button type="submit">Create School</button>
-    </form>
-
-    <h3>Schools</h3>
-    <div class="section-actions"><span id="show-all-schools" class="muted-link hidden">Show all schools</span></div>
-    <ul id="school-list"></ul>
-
-    <!-- Terms section appears only after selecting a school -->
-    <div id="terms-section" class="hidden">
-      <div style="display:flex; align-items:center; justify-content:space-between;">
-        <h3>Terms</h3>
-        <div class="section-actions">
-          <span id="show-all-terms" class="muted-link hidden">Show all terms</span>
-          <button id="show-create-term" type="button" class="link-btn">+ New Term</button>
-        </div>
-      </div>
-      <form id="create-term-form" class="hidden">
-        <input id="school-year" placeholder="School Year" required>
-        <input id="term-name" placeholder="Term Name" required>
-        <button type="submit">Create Term</button>
-      </form>
-      <ul id="term-list"></ul>
+  <div class="wizard card teacher-card">
+    <div class="wizard-tabs">
+      <button data-step="school" class="active">School & Term</button>
+      <button data-step="classes">Classes</button>
+      <button data-step="roster">Roster</button>
+      <button data-step="assess">Assess & Record</button>
     </div>
 
-    <!-- Classes section appears only after selecting a term -->
-    <div id="classes-section" class="hidden">
-      <div style="display:flex; align-items:center; justify-content:space-between;">
-        <h3>Classes</h3>
-        <div class="section-actions">
-          <button id="show-create-class" type="button" class="link-btn">+ New Class</button>
-        </div>
+    <!-- Step 1: School & Term -->
+    <div id="step-school" class="wizard-step active">
+      <h2>Schools</h2>
+      <form id="create-school-form">
+        <input id="school-name" placeholder="School Name" required>
+        <input id="school-address" placeholder="Address" required>
+        <button type="submit">Create School</button>
+      </form>
+      <ul id="school-list"></ul>
+      <div id="term-panel" class="hidden">
+        <h3>Terms</h3>
+        <form id="create-term-form">
+          <input id="term-school-year" placeholder="S.Y.2025-2026" required>
+          <button type="submit">Create Term</button>
+        </form>
+        <ul id="term-list"></ul>
       </div>
-      <form id="create-class-form" class="hidden">
-        <input id="class-name" placeholder="Class Name" required>
-        <input id="grade-level" placeholder="Grade Level" required>
-        <input id="section" placeholder="Section" required>
-        <input id="subject" placeholder="Subject" required>
+    </div>
+
+    <!-- Step 2: Classes -->
+    <div id="step-classes" class="wizard-step">
+      <h2>Classes</h2>
+      <form id="create-class-form">
+        <input id="class-subject" placeholder="Subject" required>
+        <input id="class-school-year" placeholder="2025-2026" required>
+        <input id="class-section" placeholder="Section" required>
         <button type="submit">Create Class</button>
       </form>
       <ul id="class-list"></ul>
     </div>
+
+    <!-- Step 3: Roster -->
+    <div id="step-roster" class="wizard-step">
+      <h2>Class Roster</h2>
+      <form id="add-student-form">
+        <input id="student-name" placeholder="Name" required>
+        <input id="student-lrn" placeholder="LRN" required>
+        <input id="student-sex" placeholder="Sex" required>
+        <input id="student-birthdate" type="date" placeholder="Birthdate" required>
+        <input id="student-group" placeholder="Group" required>
+        <button type="submit">Add Student</button>
+      </form>
+      <table id="roster-table"></table>
+    </div>
+
+    <!-- Step 4: Assess & Record -->
+    <div id="step-assess" class="wizard-step">
+      <h2>Assess & Record</h2>
+      <div id="templates-panel">
+        <h3>Assessment Templates</h3>
+        <form id="add-assessment-form">
+          <select id="assessment-category">
+            <option value="WW">WW</option>
+            <option value="PT">PT</option>
+          </select>
+          <input id="assessment-code" placeholder="W1" required>
+          <input id="assessment-title" placeholder="Title" required>
+          <input id="assessment-max" type="number" placeholder="Max Score" required>
+          <button type="submit">Add Item</button>
+        </form>
+        <ul id="assessment-list"></ul>
+        <h3>Behavior Rules</h3>
+        <form id="add-rule-form">
+          <select id="rule-kind">
+            <option value="merit">Merit</option>
+            <option value="demerit">Demerit</option>
+          </select>
+          <input id="rule-label" placeholder="Label" required>
+          <input id="rule-points" type="number" placeholder="Points" required>
+          <button type="submit">Add Rule</button>
+        </form>
+        <ul id="rule-list"></ul>
+      </div>
+      <div id="record-panel">
+        <h3>Scores</h3>
+        <table id="score-grid"></table>
+      </div>
+    </div>
   </div>
+
   <script type="module">
     import { setupNav, requireLogin } from './auth.js';
     setupNav();
     requireLogin(['teacher']);
   </script>
-  <script type="module" src="teacher-admin.js"></script>
+  <script type="module" src="teacher.js"></script>
 </body>
 </html>
-
