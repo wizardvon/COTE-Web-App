@@ -135,6 +135,13 @@ table {
   margin-top: 20px;
 }
 
+/* Wizard layout */
+.wizard { width:100%; max-width:900px; margin-top:20px; }
+.wizard-tabs { display:flex; gap:8px; margin-bottom:12px; }
+.wizard-tabs button { flex:1; }
+.wizard-step { display:none; }
+.wizard-step.active { display:block; }
+
 th, td {
   border: 1px solid #333;
   padding: 8px;
