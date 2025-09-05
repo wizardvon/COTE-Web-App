@@ -104,7 +104,6 @@ export async function loadMyClasses(schoolId, termId) {
     const data = c.data();
     const item = li(data.classLabel);
     item.dataset.id = c.id;
-    item.onclick = () => openClass(schoolId, termId, c.id);
     list.appendChild(item);
   });
 }
@@ -120,13 +119,6 @@ export async function createClass(schoolId, termId, { subject, schoolYear, secti
   return ref.id;
 }
 
-export async function openClass(schoolId, termId, classId) {
-  currentClass = classId;
-  showStep('roster');
-  await loadRoster(schoolId, termId, classId);
-  await listAssessments(schoolId, termId, classId);
-  await listBehaviorRules(schoolId, termId, classId);
-}
 
 // ---------- Roster ----------
 async function loadRoster(schoolId, termId, classId) {
@@ -301,54 +293,60 @@ classForm.addEventListener('submit', async e=>{
 });
 
 const studentForm = document.getElementById('add-student-form');
-studentForm.addEventListener('submit', async e=>{
-  e.preventDefault();
-  if (!currentSchool || !currentTerm || !currentClass) return alert('Open a class first');
-  const student = {
-    name: studentForm['student-name'].value.trim(),
-    lrn: studentForm['student-lrn'].value.trim(),
-    sex: studentForm['student-sex'].value.trim(),
-    birthdate: studentForm['student-birthdate'].value,
-    group: studentForm['student-group'].value.trim()
-  };
-  try {
-    await addStudent(currentSchool, currentTerm, currentClass, student);
-    studentForm.reset();
-  } catch(err) {
-    alert(err.message);
-  }
-});
+if (studentForm) {
+  studentForm.addEventListener('submit', async e=>{
+    e.preventDefault();
+    if (!currentSchool || !currentTerm || !currentClass) return alert('Open a class first');
+    const student = {
+      name: studentForm['student-name'].value.trim(),
+      lrn: studentForm['student-lrn'].value.trim(),
+      sex: studentForm['student-sex'].value.trim(),
+      birthdate: studentForm['student-birthdate'].value,
+      group: studentForm['student-group'].value.trim()
+    };
+    try {
+      await addStudent(currentSchool, currentTerm, currentClass, student);
+      studentForm.reset();
+    } catch(err) {
+      alert(err.message);
+    }
+  });
+}
 
 const assessForm = document.getElementById('add-assessment-form');
-assessForm.addEventListener('submit', async e=>{
-  e.preventDefault();
-  if (!currentClass) return alert('Open a class first');
-  const data = {
-    category: assessForm['assessment-category'].value,
-    code: assessForm['assessment-code'].value.trim(),
-    title: assessForm['assessment-title'].value.trim(),
-    maxScore: Number(assessForm['assessment-max'].value),
-    createdByUid: auth.currentUser.uid
-  };
-  try {
-    await createAssessment(currentSchool, currentTerm, currentClass, data);
-    assessForm.reset();
-  } catch(err) { alert(err.message); }
-});
+if (assessForm) {
+  assessForm.addEventListener('submit', async e=>{
+    e.preventDefault();
+    if (!currentClass) return alert('Open a class first');
+    const data = {
+      category: assessForm['assessment-category'].value,
+      code: assessForm['assessment-code'].value.trim(),
+      title: assessForm['assessment-title'].value.trim(),
+      maxScore: Number(assessForm['assessment-max'].value),
+      createdByUid: auth.currentUser.uid
+    };
+    try {
+      await createAssessment(currentSchool, currentTerm, currentClass, data);
+      assessForm.reset();
+    } catch(err) { alert(err.message); }
+  });
+}
 
 const ruleForm = document.getElementById('add-rule-form');
-ruleForm.addEventListener('submit', async e=>{
-  e.preventDefault();
-  if (!currentClass) return alert('Open a class first');
-  const data = {
-    kind: ruleForm['rule-kind'].value,
-    label: ruleForm['rule-label'].value.trim(),
-    points: Number(ruleForm['rule-points'].value),
-    createdByUid: auth.currentUser.uid
-  };
-  try {
-    await createBehaviorRule(currentSchool, currentTerm, currentClass, data);
-    ruleForm.reset();
-  } catch(err) { alert(err.message); }
-});
+if (ruleForm) {
+  ruleForm.addEventListener('submit', async e=>{
+    e.preventDefault();
+    if (!currentClass) return alert('Open a class first');
+    const data = {
+      kind: ruleForm['rule-kind'].value,
+      label: ruleForm['rule-label'].value.trim(),
+      points: Number(ruleForm['rule-points'].value),
+      createdByUid: auth.currentUser.uid
+    };
+    try {
+      await createBehaviorRule(currentSchool, currentTerm, currentClass, data);
+      ruleForm.reset();
+    } catch(err) { alert(err.message); }
+  });
+}
 
