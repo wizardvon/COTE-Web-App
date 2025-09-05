@@ -25,8 +25,6 @@
     <div class="wizard-tabs">
       <button data-step="school" class="active">School & Term</button>
       <button data-step="classes">Classes</button>
-      <button data-step="roster">Roster</button>
-      <button data-step="assess">Assess & Record</button>
     </div>
 
     <!-- Step 1: School & Term -->
@@ -58,55 +56,7 @@
         <button type="submit">Create Class</button>
       </form>
       <ul id="class-list"></ul>
-    </div>
-
-    <!-- Step 3: Roster -->
-    <div id="step-roster" class="wizard-step">
-      <h2>Class Roster</h2>
-      <form id="add-student-form">
-        <input id="student-name" placeholder="Name" required>
-        <input id="student-lrn" placeholder="LRN" required>
-        <input id="student-sex" placeholder="Sex" required>
-        <input id="student-birthdate" type="date" placeholder="Birthdate" required>
-        <input id="student-group" placeholder="Group" required>
-        <button type="submit">Add Student</button>
-      </form>
-      <table id="roster-table"></table>
-    </div>
-
-    <!-- Step 4: Assess & Record -->
-    <div id="step-assess" class="wizard-step">
-      <h2>Assess & Record</h2>
       <p><a href="teacher-score.html" class="link-btn">Open Score Page</a></p>
-      <div id="templates-panel">
-        <h3>Assessment Templates</h3>
-        <form id="add-assessment-form">
-          <select id="assessment-category">
-            <option value="WW">WW</option>
-            <option value="PT">PT</option>
-          </select>
-          <input id="assessment-code" placeholder="W1" required>
-          <input id="assessment-title" placeholder="Title" required>
-          <input id="assessment-max" type="number" placeholder="Max Score" required>
-          <button type="submit">Add Item</button>
-        </form>
-        <ul id="assessment-list"></ul>
-        <h3>Behavior Rules</h3>
-        <form id="add-rule-form">
-          <select id="rule-kind">
-            <option value="merit">Merit</option>
-            <option value="demerit">Demerit</option>
-          </select>
-          <input id="rule-label" placeholder="Label" required>
-          <input id="rule-points" type="number" placeholder="Points" required>
-          <button type="submit">Add Rule</button>
-        </form>
-        <ul id="rule-list"></ul>
-      </div>
-      <div id="record-panel">
-        <h3>Scores</h3>
-        <table id="score-grid"></table>
-      </div>
     </div>
   </div>
 
