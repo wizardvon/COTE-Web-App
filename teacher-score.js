@@ -1,39 +1,66 @@
+import { db } from './firebase.js';
+import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+
+const params = new URLSearchParams(window.location.search);
+const schoolId = params.get('school');
+const termId = params.get('term');
+const classId = params.get('class');
+const storageKey = classId ? `teacherScoreData_${classId}` : 'teacherScoreData';
+
 const tableBody = document.getElementById('studentTable').getElementsByTagName('tbody')[0];
 let history = [];
+const totalColumns = document.querySelector('#studentTable thead tr:nth-child(2)').cells.length;
+
+async function loadRoster() {
+  if (!schoolId || !termId || !classId) return;
+  tableBody.innerHTML = '';
+  const snap = await getDocs(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'roster'));
+  snap.forEach(docSnap => {
+    const s = docSnap.data();
+    const row = tableBody.insertRow();
+    const vals = [s.name || '', s.lrn || '', s.sex || '', s.birthdate || ''];
+    vals.forEach(v => {
+      const cell = row.insertCell();
+      cell.textContent = v;
+    });
+    for (let i = vals.length; i < totalColumns; i++) {
+      const cell = row.insertCell();
+      cell.contentEditable = 'true';
+    }
+  });
+  loadScores();
+}
 
 function saveData() {
   const data = [];
   for (const row of tableBody.rows) {
     const rowData = [];
-    for (const cell of row.cells) {
-      rowData.push(cell.innerText);
+    for (let i = 4; i < row.cells.length; i++) {
+      rowData.push(row.cells[i].innerText);
     }
     data.push(rowData);
   }
-  localStorage.setItem('teacherScoreData', JSON.stringify(data));
+  localStorage.setItem(storageKey, JSON.stringify(data));
 }
 
-function loadData() {
-  const data = JSON.parse(localStorage.getItem('teacherScoreData'));
-  if (data) {
-    tableBody.innerHTML = '';
-    for (const rowData of data) {
-      const row = tableBody.insertRow();
-      for (const cellData of rowData) {
-        const cell = row.insertCell();
-        cell.contentEditable = 'true';
-        cell.innerText = cellData;
-      }
-    }
-  }
+function loadScores() {
+  const data = JSON.parse(localStorage.getItem(storageKey));
+  if (!data) return;
+  data.forEach((rowData, rIdx) => {
+    const row = tableBody.rows[rIdx];
+    if (!row) return;
+    rowData.forEach((cellData, cIdx) => {
+      const cell = row.cells[cIdx + 4];
+      if (cell) cell.innerText = cellData;
+    });
+  });
 }
 
 function addRow() {
   const row = tableBody.insertRow();
-  const columns = tableBody.rows[0]?.cells.length || 0;
-  for (let i = 0; i < columns; i++) {
+  for (let i = 0; i < totalColumns; i++) {
     const cell = row.insertCell();
-    cell.contentEditable = 'true';
+    if (i >= 4) cell.contentEditable = 'true';
   }
   saveData();
 }
@@ -57,5 +84,8 @@ tableBody.addEventListener('input', () => {
   saveData();
 });
 
-window.addEventListener('load', loadData);
+window.addEventListener('load', loadRoster);
 
+window.addRow = addRow;
+window.undo = undo;
+window.clearAll = clearAll;
