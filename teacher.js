@@ -104,8 +104,21 @@ export async function loadMyClasses(schoolId, termId) {
     const data = c.data();
     const item = li(data.classLabel);
     item.dataset.id = c.id;
+    item.onclick = () => selectClass(c.id);
     list.appendChild(item);
   });
+}
+
+function selectClass(id) {
+  currentClass = id;
+  document.querySelectorAll('#class-list li').forEach(li => {
+    li.classList.toggle('active', li.dataset.id === id);
+  });
+  const link = document.getElementById('score-link');
+  if (link) {
+    link.href = `teacher-score.html?school=${currentSchool}&term=${currentTerm}&class=${id}`;
+    link.classList.remove('hidden');
+  }
 }
 
 export async function createClass(schoolId, termId, { subject, schoolYear, section }) {
