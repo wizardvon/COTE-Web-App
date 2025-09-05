@@ -3,8 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Class Score Manager</title>
+  <title>Teacher Score Page</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      padding: 10px;
+    }
+    .score-toolbar {
+      margin-bottom: 10px;
+    }
+    .score-table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 1800px;
+    }
+    .score-table th,
+    .score-table td {
+      border: 1px solid #333;
+      padding: 4px;
+      text-align: center;
+    }
+    .score-table th {
+      background: #1e1e1e;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .score-table td[contenteditable="true"] {
+      background: #2b2b2b;
+      cursor: text;
+    }
+  </style>
 </head>
 <body>
   <img src="banner.svg" alt="Classroom of the Elite banner" class="banner">
@@ -22,72 +51,59 @@
   </nav>
 
   <p><a href="teacher.html" class="link-btn">&larr; Back to Admin</a></p>
-  <div class="card score-card">
-    <h2>Class Score Manager</h2>
-    <p class="small-note" id="class-path"></p>
 
-    <div class="controls">
-      <label><input type="checkbox" id="show-all-sections"> Show all sections in this subject</label>
-      <select id="section-select" class="hidden"></select>
-      <span class="small-note">Tip: toggle to view all sections that share this subject in the selected term.</span>
+  <div class="card teacher-card">
+    <h2>Student Records</h2>
+    <div class="score-toolbar">
+      <button onclick="addRow()">Add Student</button>
+      <button onclick="undo()">Undo</button>
+      <button onclick="clearAll()">Clear All</button>
     </div>
-
-    <form id="add-student-form">
-      <input id="student-name" placeholder="Student Name" required>
-      <input id="student-lrn" placeholder="LRN" required>
-      <input id="student-birthdate" type="date" required>
-      <select id="student-sex" required><option value="">Sex</option><option value="M">M</option><option value="F">F</option></select>
-      <input id="student-email" placeholder="Email (optional)">
-      <input id="guardian-contact" placeholder="Guardian Contact (optional)">
-      <button type="submit">Add Student</button>
-    </form>
-
-    <!-- Scrollable table wrapper -->
     <div class="table-container">
-      <table id="scores-table">
-        <colgroup id="scores-colgroup"></colgroup>
+      <table id="studentTable" class="score-table">
         <thead>
-          <tr id="group-header">
-            <th colspan="7">Student Profile</th>
-            <!-- Each score group has 10 inputs plus a total column -->
-            <th id="ww-group" colspan="11">Written Works</th>
-            <th id="pt-group" colspan="11">Performance Task</th>
-            <th id="merit-group" colspan="11">Merit</th>
-            <th id="demerit-group" colspan="11">Demerit</th>
-          </tr>
-          <tr id="sub-header">
-            <th>Name</th>
+          <tr>
+            <th>Name of Student</th>
             <th>LRN</th>
-            <th>Birthdate</th>
             <th>Sex</th>
-            <th>Class/Section</th>
-            <th>Linked</th>
-            <th>Actions</th> <!-- Delete links use .danger-link styling -->
-            <th class="ww-header">W1</th>
-            <th id="ww-total-header">TW</th>
-            <th class="pt-header">PT1</th>
-            <th id="pt-total-header">TP</th>
-            <th class="merit-header">M1</th>
-            <th id="merit-total-header">TM</th>
-            <th class="demerit-header">D1</th>
-            <th id="demerit-total-header">TD</th>
+            <th>Birthdate</th>
+            <th colspan="10">Written Works</th>
+            <th colspan="10">Performance Task</th>
+            <th colspan="10">Merit Points</th>
+            <th colspan="10">Demerit Points</th>
           </tr>
-          <tr id="max-row">
-            <!-- Max scores for WW/PT and labels for Merit/Demerit -->
-            <th></th><th></th><th></th><th></th><th></th><th></th><th></th>
-            <th><input type="number" class="ww-max"></th><th id="ww-max-placeholder"></th>
-            <th><input type="number" class="pt-max"></th><th id="pt-max-placeholder"></th>
-            <th><input type="text" class="merit-label" maxlength="4"></th><th id="merit-max-placeholder"></th>
-            <th><input type="text" class="demerit-label" maxlength="4"></th><th id="demerit-max-placeholder"></th>
+          <tr>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th>WW1</th><th>WW2</th><th>WW3</th><th>WW4</th><th>WW5</th>
+            <th>WW6</th><th>WW7</th><th>WW8</th><th>WW9</th><th>WW10</th>
+            <th>PT1</th><th>PT2</th><th>PT3</th><th>PT4</th><th>PT5</th>
+            <th>PT6</th><th>PT7</th><th>PT8</th><th>PT9</th><th>PT10</th>
+            <th>MP1</th><th>MP2</th><th>MP3</th><th>MP4</th><th>MP5</th>
+            <th>MP6</th><th>MP7</th><th>MP8</th><th>MP9</th><th>MP10</th>
+            <th>DP1</th><th>DP2</th><th>DP3</th><th>DP4</th><th>DP5</th>
+            <th>DP6</th><th>DP7</th><th>DP8</th><th>DP9</th><th>DP10</th>
           </tr>
         </thead>
-        <tbody id="scores-body"></tbody>
+        <tbody>
+          <tr>
+            <td contenteditable="true">Juan Dela Cruz</td>
+            <td contenteditable="true">1234567890</td>
+            <td contenteditable="true">M</td>
+            <td contenteditable="true">2005-01-01</td>
+            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
+            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
+            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
+            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
+            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
+            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
+            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
+            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
+          </tr>
+        </tbody>
       </table>
-    </div>
-
-    <div class="action-buttons">
-      <button id="save">Save</button>
-      <button id="download">Download CSV</button>
     </div>
   </div>
 
@@ -96,6 +112,7 @@
     setupNav();
     requireLogin(['teacher']);
   </script>
-  <script type="module" src="teacher-score.js"></script>
+  <script src="teacher-score.js"></script>
 </body>
 </html>
+
