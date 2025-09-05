@@ -55,9 +55,7 @@
   <div class="card teacher-card">
     <h2>Student Records</h2>
     <div class="score-toolbar">
-      <button onclick="addRow()">Add Student</button>
-      <button onclick="undo()">Undo</button>
-      <button onclick="clearAll()">Clear All</button>
+      <span id="saveStatus" class="small-note"></span>
     </div>
     <div class="table-container">
       <table id="studentTable" class="score-table">
@@ -87,22 +85,7 @@
             <th>DP6</th><th>DP7</th><th>DP8</th><th>DP9</th><th>DP10</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td contenteditable="true">Juan Dela Cruz</td>
-            <td contenteditable="true">1234567890</td>
-            <td contenteditable="true">M</td>
-            <td contenteditable="true">2005-01-01</td>
-            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
-            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
-            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
-            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
-            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
-            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
-            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
-            <td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>
-          </tr>
-        </tbody>
+        <tbody id="scoreBody"></tbody>
       </table>
     </div>
   </div>
@@ -112,7 +95,7 @@
     setupNav();
     requireLogin(['teacher']);
   </script>
-  <script src="teacher-score.js"></script>
+  <script type="module" src="teacher-score.js"></script>
 </body>
 </html>
 

@@ -1,7 +1,8 @@
+import { db } from './firebase.js';
 import {
-  db, collection, doc, getDocs, addDoc, updateDoc, deleteDoc,
+  collection, doc, getDocs, addDoc, updateDoc, deleteDoc,
   serverTimestamp, query, orderBy
-} from "./firebase.js";
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 // These should be set when the teacher picks School/Term/Class:
 let current = { schoolId: null, termId: null, classId: null };
