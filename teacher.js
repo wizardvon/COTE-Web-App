@@ -78,7 +78,8 @@ export async function loadTerms(schoolId) {
   list.innerHTML = '';
   const snap = await getDocs(collection(db, 'schools', schoolId, 'terms'));
   snap.forEach(t => {
-    const item = li(t.id);
+    const data = t.data();
+    const item = li(data.name || t.id);
     item.dataset.id = t.id;
     item.onclick = () => { currentTerm = t.id; showStep('classes'); loadMyClasses(currentSchool, currentTerm); };
     list.appendChild(item);
@@ -88,7 +89,9 @@ export async function loadTerms(schoolId) {
 export async function createTerm(schoolId, schoolYear) {
   const termId = `S.Y.${schoolYear}`;
   await setDoc(doc(db, 'schools', schoolId, 'terms', termId), {
-    schoolYear, createdAt: serverTimestamp()
+    schoolYear,
+    name: termId,
+    createdAt: serverTimestamp()
   });
   await loadTerms(schoolId);
   return termId;
@@ -102,16 +105,16 @@ export async function loadMyClasses(schoolId, termId) {
   const snap = await getDocs(q);
   snap.forEach(c => {
     const data = c.data();
-    const item = li(data.classLabel);
+    const item = li(data.name);
     item.dataset.id = c.id;
     list.appendChild(item);
   });
 }
 
 export async function createClass(schoolId, termId, { subject, schoolYear, section }) {
-  const classLabel = `${subject} - S.Y.${schoolYear} - ${section}`;
+  const name = `${subject} - S.Y.${schoolYear} - ${section}`;
   const ref = await addDoc(collection(db, 'schools', schoolId, 'terms', termId, 'classes'), {
-    subject, schoolYear, section, classLabel,
+    name, subject, schoolYear, section,
     teacherUid: auth.currentUser.uid,
     createdAt: serverTimestamp()
   });

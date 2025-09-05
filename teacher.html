@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Teacher Admin</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.6.2/dist/css/tabulator.min.css">
+  <script src="https://unpkg.com/tabulator-tables@5.6.2/dist/js/tabulator.min.js"></script>
 </head>
 <body>
   <img src="banner.svg" alt="Classroom of the Elite banner" class="banner">
@@ -60,11 +62,22 @@
     </div>
   </div>
 
+  <div id="roster-sheet" style="display:none">
+    <div class="controls">
+      <button id="undoBtn">Undo</button>
+      <button id="redoBtn">Redo</button>
+      <button id="addBlankRowsBtn">Add 10 Rows</button>
+      <span id="saveStatus" class="small-note"></span>
+    </div>
+    <div id="rosterGrid"></div>
+  </div>
+
   <script type="module">
     import { setupNav, requireLogin } from './auth.js';
     setupNav();
     requireLogin(['teacher']);
   </script>
   <script type="module" src="teacher.js"></script>
+  <script type="module" src="teacher-roster.js"></script>
 </body>
 </html>

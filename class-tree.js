@@ -1,20 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDtaaCxT9tYXPwX3Pvoh_5pJosdmI1KEkM",
-  authDomain: "cote-web-app.firebaseapp.com",
-  projectId: "cote-web-app",
-  storageBucket: "cote-web-app.appspot.com",
-  messagingSenderId: "763908867537",
-  appId: "1:763908867537:web:8611fb58fdaca485be0cf0",
-  measurementId: "G-ZHZDZDGKQX"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+import { auth, db } from './firebase.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { collection, getDocs, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 async function buildClassTree(uid, selectedSchoolId = null) {
   const tree = document.getElementById('class-tree');
@@ -65,13 +51,13 @@ async function buildClassTree(uid, selectedSchoolId = null) {
     });
 
     const isOwner = school.data.ownerUid === uid;
-    const memberDoc = await getDoc(doc(db, 'schools', school.id, 'teachers', uid));
+    const memberDoc = await getDoc(doc(db, 'schools', school.id, 'members', uid));
     if (!isOwner && !memberDoc.exists()) {
       const joinBtn = document.createElement('button');
       joinBtn.textContent = 'Join';
       joinBtn.addEventListener('click', async e => {
         e.stopPropagation();
-        await setDoc(doc(db, 'schools', school.id, 'teachers', uid), { joinedAt: Date.now() });
+        await setDoc(doc(db, 'schools', school.id, 'members', uid), { joinedAt: serverTimestamp() });
         buildClassTree(uid, selectedSchoolId);
         window.dispatchEvent(new Event('refresh-class-tree'));
       });
@@ -84,8 +70,9 @@ async function buildClassTree(uid, selectedSchoolId = null) {
     const byYear = {};
     termsSnap.forEach(t => {
       const data = t.data();
+      const name = data.name || t.id;
       if (!byYear[data.schoolYear]) byYear[data.schoolYear] = [];
-      byYear[data.schoolYear].push({ id: t.id, name: data.name });
+      byYear[data.schoolYear].push({ id: t.id, name });
     });
     Object.entries(byYear).forEach(([year, termArr]) => {
       const yearLi = document.createElement('li');

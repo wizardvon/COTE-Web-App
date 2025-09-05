@@ -1,22 +1,7 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { auth, db } from './firebase.js';
+import { createUserWithEmailAndPassword, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { autoLinkStudentToClasses } from './autolink.js';
-
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDtaaCxT9tYXPwX3Pvoh_5pJosdmI1KEkM",
-  authDomain: "cote-web-app.firebaseapp.com",
-  projectId: "cote-web-app",
-  storageBucket: "cote-web-app.appspot.com",
-  messagingSenderId: "763908867537",
-  appId: "1:763908867537:web:8611fb58fdaca485be0cf0",
-  measurementId: "G-ZHZDZDGKQX"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
 
 const roleSelect = document.getElementById('role');
 const studentFields = document.getElementById('student-fields');

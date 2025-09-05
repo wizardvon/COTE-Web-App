@@ -1,20 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDtaaCxT9tYXPwX3Pvoh_5pJosdmI1KEkM",
-  authDomain: "cote-web-app.firebaseapp.com",
-  projectId: "cote-web-app",
-  storageBucket: "cote-web-app.appspot.com",
-  messagingSenderId: "763908867537",
-  appId: "1:763908867537:web:8611fb58fdaca485be0cf0",
-  measurementId: "G-ZHZDZDGKQX"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+import { auth, db } from './firebase.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 export function setupNav() {
   const protectedIds = ['profile-link', 'cote-task-link', 'elms-link', 'transfer-link', 'teacher-link'];

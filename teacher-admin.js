@@ -1,20 +1,7 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDtaaCxT9tYXPwX3Pvoh_5pJosdmI1KEkM",
-  authDomain: "cote-web-app.firebaseapp.com",
-  projectId: "cote-web-app",
-  storageBucket: "cote-web-app.appspot.com",
-  messagingSenderId: "763908867537",
-  appId: "1:763908867537:web:8611fb58fdaca485be0cf0",
-  measurementId: "G-ZHZDZDGKQX"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// NOTE: This file is not used by the current UI (teacher.html). Keeping for reference.
+import { auth, db } from './firebase.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { doc, setDoc, getDoc, collection, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 function getVal(id) { return document.getElementById(id)?.value.trim(); }
 function toggle(el, show) { if (!el) return; el.classList[show ? 'remove' : 'add']('hidden'); }
