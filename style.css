@@ -1,0 +1,402 @@
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #121212;
+  color: #f0f0f0;
+  margin: 0;
+}
+
+.banner {
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+}
+
+.card {
+  background-color: #1e1e1e;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin-top: 20px;
+  max-width: 800px;
+  width: 80%;
+}
+
+.teacher-card {
+  max-width: 1200px;
+  width: 95%;
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
+}
+
+.navbar {
+  width: 100%;
+  background-color: #333;
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+
+.navbar a {
+  color: white;
+  padding: 14px 20px;
+  text-decoration: none;
+  text-align: center;
+}
+
+.navbar a:hover {
+  background-color: #ddd;
+  color: black;
+}
+
+h1, h2, h3 {
+  text-align: center;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  margin-top: 10px;
+}
+
+input {
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  border: 1px solid #333;
+  border-radius: 5px;
+  background-color: #121212;
+  color: #f0f0f0;
+}
+
+button {
+  display: inline-block;
+  width: auto;
+  padding: 6px 12px;
+  font-size: 0.9em;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 5px;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.hidden { display: none !important; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.actions { display: flex; align-items: center; gap: 12px; }
+.link-btn {
+  background: transparent; border: none; padding: 0;
+  color: #8ab4f8; cursor: pointer; font-size: 0.95rem;
+}
+.link-btn:hover { text-decoration: underline; }
+.archive-link { color: #9aa0a6; cursor: pointer; font-size: 0.9rem; }
+.archive-link:hover { text-decoration: underline; }
+.archive-link.disabled { color: #5f6368; cursor: not-allowed; text-decoration: none; }
+.danger-link {
+  background: none;
+  border: none;
+  color: #f28b82;         /* red text */
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 0;
+}
+.danger-link:hover {
+  text-decoration: underline;
+}
+.actions-cell { display:flex; gap:10px; align-items:center; justify-content:flex-start; }
+.inline-input { width: 95%; }
+.muted { color: #9aa0a6; }
+.muted-link { color: #9aa0a6; cursor: pointer; }
+.muted-link:hover { text-decoration: underline; }
+.small-note { font-size: .9rem; color:#9aa0a6; }
+.section-actions { display:flex; justify-content:flex-end; gap:12px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+/* Wizard layout */
+.wizard { width:100%; max-width:900px; margin-top:20px; }
+.wizard-tabs { display:flex; gap:8px; margin-bottom:12px; }
+.wizard-tabs button { flex:1; }
+.wizard-step { display:none; }
+.wizard-step.active { display:block; }
+
+th, td {
+  border: 1px solid #333;
+  padding: 8px;
+  text-align: center;
+}
+
+#scores-table th, #scores-table td {
+  padding: 2px;
+}
+
+#scores-table input {
+  padding: 4px;
+  margin: 0;
+}
+
+#scores-table input[type="number"] {
+  width: 40px;
+  -moz-appearance: textfield;
+}
+
+#scores-table .merit-label,
+#scores-table .demerit-label {
+  width: 40px;
+}
+
+#scores-table input[type="number"]::-webkit-outer-spin-button,
+#scores-table input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#max-row th {
+  position: sticky;
+  top: 0;
+  background-color: #1e1e1e;
+  z-index: 1;
+}
+
+#sub-header .ww-header,
+#sub-header .pt-header,
+#sub-header .merit-header,
+#sub-header .demerit-header {
+  position: relative;
+}
+
+.add-col-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  line-height: 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.add-row-btn {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  padding: 0;
+  margin: 0;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.add-row-cell {
+  text-align: center;
+}
+
+.add-row-spacer {
+  border: none;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.action-buttons button {
+  width: auto;
+}
+
+#scores-table td:first-child,
+#scores-table #sub-header th:first-child {
+  position: sticky;
+  left: 0;
+  background-color: #1e1e1e;
+  z-index: 1;
+}
+
+#scores-table #sub-header th:first-child {
+  z-index: 2;
+}
+
+#class-tree li,
+#school-list li,
+#term-list li,
+#class-list li {
+  cursor: pointer;
+  padding: 4px;
+  margin: 2px 0;
+  background-color: #2a2a2a;
+  border-radius: 4px;
+}
+
+#class-tree li:hover,
+#school-list li:hover,
+#term-list li:hover,
+#class-list li:hover {
+  background-color: #333;
+}
+
+#class-tree .back-link {
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+#class-tree .back-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .card {
+    width: 95%;
+    max-width: none;
+  }
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: #c0c0c0;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+}
+
+.small-note {
+  font-size: 0.9rem;
+  color: #9aa0a6;
+}
+/* Wider layout just for the score page */
+.score-card {
+  max-width: 1400px;  /* wider than default */
+  width: 98%;
+}
+
+/* Resizable columns */
+#scores-table {
+  border-collapse: collapse;
+  table-layout: auto;
+  min-width: 1400px;
+}
+
+#scores-table th, #scores-table td {
+  white-space: nowrap;
+}
+
+/* Default min-widths for profile columns */
+#scores-table thead tr#sub-header th:nth-child(1),
+#scores-table tbody tr td:nth-child(1) {
+  min-width: 220px;
+}
+#scores-table thead tr#sub-header th:nth-child(2),
+#scores-table tbody tr td:nth-child(2) {
+  min-width: 120px;
+}
+#scores-table thead tr#sub-header th:nth-child(3),
+#scores-table tbody tr td:nth-child(3) {
+  min-width: 120px;
+}
+#scores-table thead tr#sub-header th:nth-child(4),
+#scores-table tbody tr td:nth-child(4) {
+  min-width: 80px;
+}
+#scores-table thead tr#sub-header th:nth-child(5),
+#scores-table tbody tr td:nth-child(5) {
+  min-width: 220px;
+}
+#scores-table thead tr#sub-header th:nth-child(6),
+#scores-table tbody tr td:nth-child(6) {
+  min-width: 90px;
+}
+
+.th-resizable {
+  position: relative;
+}
+
+.th-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;           /* small overlap so it's easy to grab */
+  width: 8px;            /* hit area for mouse */
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.th-resizer:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.user-select-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+/* Optional: visual line while dragging */
+.col-resize-guide {
+  position: fixed;
+  top: 0;
+  width: 1px;
+  height: 100vh;
+  background: #8ab4f8;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+
+/* Ensure the group headers can host the + button visibly */
+#ww-group, #pt-group, #merit-group, #demerit-group {
+  position: relative;
+  padding-right: 26px; /* room for + button */
+}
+
+/* In case the + buttons were hidden under sticky headers, bring front */
+.add-col-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 5;
+}

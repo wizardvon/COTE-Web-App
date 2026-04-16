@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Score Page</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      padding: 10px;
+    }
+    .score-toolbar {
+      margin-bottom: 10px;
+    }
+    .score-table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 1800px;
+    }
+    .score-table th,
+    .score-table td {
+      border: 1px solid #333;
+      padding: 4px;
+      text-align: center;
+    }
+    .score-table th {
+      background: #1e1e1e;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .score-table td[contenteditable="true"] {
+      background: #2b2b2b;
+      cursor: text;
+    }
+  </style>
+</head>
+<body>
+  <img src="banner.svg" alt="Classroom of the Elite banner" class="banner">
+  <nav class="navbar">
+    <a href="index.html">Home</a>
+    <a id="profile-link" href="profile.html">Profile</a>
+    <a id="cote-task-link" href="cote-task.html">COTE Task</a>
+    <a id="elms-link" href="elms.html">eLMs</a>
+    <a id="transfer-link" href="transfer.html">Transfer</a>
+    <a href="about.html">About</a>
+    <a href="help.html">Help</a>
+    <a id="teacher-link" href="teacher.html">Teacher</a>
+    <a id="login-link" href="login.html">Login</a>
+    <a id="logout-link" href="#" style="display:none;">Logout</a>
+  </nav>
+
+  <p><a href="teacher.html" class="link-btn">&larr; Back to Admin</a></p>
+
+  <div class="card teacher-card">
+    <h2>Student Records</h2>
+    <div class="score-toolbar">
+      <span id="saveStatus" class="small-note"></span>
+    </div>
+    <div class="table-container">
+      <table id="studentTable" class="score-table">
+        <thead>
+          <tr>
+            <th>Name of Student</th>
+            <th>LRN</th>
+            <th>Sex</th>
+            <th>Birthdate</th>
+            <th colspan="10">Written Works</th>
+            <th colspan="10">Performance Task</th>
+            <th colspan="10">Merit Points</th>
+            <th colspan="10">Demerit Points</th>
+          </tr>
+          <tr>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th>WW1</th><th>WW2</th><th>WW3</th><th>WW4</th><th>WW5</th>
+            <th>WW6</th><th>WW7</th><th>WW8</th><th>WW9</th><th>WW10</th>
+            <th>PT1</th><th>PT2</th><th>PT3</th><th>PT4</th><th>PT5</th>
+            <th>PT6</th><th>PT7</th><th>PT8</th><th>PT9</th><th>PT10</th>
+            <th>MP1</th><th>MP2</th><th>MP3</th><th>MP4</th><th>MP5</th>
+            <th>MP6</th><th>MP7</th><th>MP8</th><th>MP9</th><th>MP10</th>
+            <th>DP1</th><th>DP2</th><th>DP3</th><th>DP4</th><th>DP5</th>
+            <th>DP6</th><th>DP7</th><th>DP8</th><th>DP9</th><th>DP10</th>
+          </tr>
+        </thead>
+        <tbody id="scoreBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module">
+    import { setupNav, requireLogin } from './auth.js';
+    setupNav();
+    requireLogin(['teacher']);
+  </script>
+  <script type="module" src="teacher-score.js"></script>
+</body>
+</html>
+

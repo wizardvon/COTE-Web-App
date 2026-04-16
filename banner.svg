@@ -1,0 +1,25 @@
+<svg width="1200" height="100" viewBox="0 0 1200 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0f1e"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+    <style>
+      .title {
+        font-family: 'Times New Roman', serif;
+        font-size: 32px;
+        font-weight: 700;
+        fill: #d4af37;
+      }
+      .tagline {
+        font-family: 'Georgia', serif;
+        font-style: italic;
+        font-size: 16px;
+        fill: #ffffff;
+      }
+    </style>
+  </defs>
+  <rect width="1200" height="100" fill="url(#bg)"/>
+  <text x="600" y="45" text-anchor="middle" class="title">CLASSROOM OF THE ELITE</text>
+  <text x="600" y="75" text-anchor="middle" class="tagline">Discipline. Leadership. Teamwork.</text>
+</svg>
