@@ -224,12 +224,23 @@ export async function createBehaviorRule(schoolId, termId, classId, data) {
 export async function logBehaviorEvent(schoolId, termId, classId, studentId, ruleId) {
   const rule = ruleCache.find(r=>r.id===ruleId);
   if (!rule) throw new Error('rule not found');
+
+  const teacherRef = doc(db, 'teachers', auth.currentUser.uid);
+  const teacherSnap = await getDoc(teacherRef);
+  const teacherData = teacherSnap.exists() ? teacherSnap.data() : null;
+  const firstName = teacherData?.firstName || '';
+  const lastName = teacherData?.lastName || '';
+  const teacherName = (firstName || lastName)
+    ? `${firstName} ${lastName}`.trim()
+    : 'Unknown Teacher';
+
   await addDoc(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'behaviorLogs'), {
     studentId,
     ruleId,
     kind: rule.kind,
     label: rule.label,
     points: rule.points,
+    teacherName,
     createdAt: serverTimestamp(),
     createdByUid: auth.currentUser.uid
   });
