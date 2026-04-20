@@ -230,9 +230,10 @@ export async function logBehaviorEvent(schoolId, termId, classId, studentId, rul
   const teacherData = teacherSnap.exists() ? teacherSnap.data() : null;
   const firstName = teacherData?.firstName || '';
   const lastName = teacherData?.lastName || '';
+  const teacherEmail = auth.currentUser?.email || '';
   const teacherName = (firstName || lastName)
     ? `${firstName} ${lastName}`.trim()
-    : 'Unknown Teacher';
+    : (teacherEmail || 'Unknown Teacher');
 
   await addDoc(collection(db, 'schools', schoolId, 'terms', termId, 'classes', classId, 'behaviorLogs'), {
     studentId,
@@ -241,6 +242,7 @@ export async function logBehaviorEvent(schoolId, termId, classId, studentId, rul
     label: rule.label,
     points: rule.points,
     teacherName,
+    teacherEmail,
     createdAt: serverTimestamp(),
     createdByUid: auth.currentUser.uid
   });
