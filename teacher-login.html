@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Login</title>
+  <link rel="stylesheet" href="admin.css?v=1">
+</head>
+<body>
+  <main class="panel-shell">
+    <section class="card" style="max-width:520px;margin:40px auto;">
+      <p class="eyebrow">C.O.T.E School System</p>
+      <h1>Teacher Login</h1>
+      <p class="subtitle">Only accounts with <strong>users/{uid}.role = "teacher"</strong> can open the control panel.</p>
+
+      <form id="teacherLoginForm" class="action-grid" style="margin-top:14px;">
+        <div class="field field-full">
+          <label for="email">Teacher Email</label>
+          <input id="email" type="email" required>
+        </div>
+
+        <div class="field field-full">
+          <label for="password">Password</label>
+          <input id="password" type="password" required>
+        </div>
+
+        <button type="submit" class="btn field-full">Continue to Teacher Control Panel</button>
+      </form>
+
+      <p id="teacherLoginStatus" class="small-note" style="margin-top:10px;"></p>
+    </section>
+  </main>
+
+  <script type="module" src="teacher-login.js?v=1"></script>
+</body>
+</html>

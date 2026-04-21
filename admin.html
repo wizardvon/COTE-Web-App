@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Control Panel</title>
+  <link rel="stylesheet" href="admin.css?v=1">
+</head>
+<body>
+  <main class="panel-shell">
+    <header class="panel-header">
+      <div>
+        <p class="eyebrow">C.O.T.E School System</p>
+        <h1>Teacher Control Panel</h1>
+        <p id="teacherSubtitle" class="subtitle">Checking teacher account...</p>
+      </div>
+      <button id="logoutBtn" class="btn btn-ghost" type="button">Logout</button>
+    </header>
+
+    <section class="summary-grid" aria-label="Summary Cards">
+      <article class="summary-card">
+        <p class="label">Loaded Students</p>
+        <p id="loadedStudentsCount" class="value">0</p>
+      </article>
+      <article class="summary-card">
+        <p class="label">Selected Students</p>
+        <p id="selectedStudentsCount" class="value">0</p>
+      </article>
+      <article class="summary-card">
+        <p class="label">Current Section</p>
+        <p id="currentSectionLabel" class="value">All Sections</p>
+      </article>
+    </section>
+
+    <section class="card" aria-labelledby="studentMgmtTitle">
+      <h2 id="studentMgmtTitle">Student Management</h2>
+
+      <div class="filters-grid">
+        <div class="field">
+          <label for="sectionFilter">Section</label>
+          <select id="sectionFilter">
+            <option value="">All Sections</option>
+          </select>
+        </div>
+
+        <div class="field field-grow">
+          <label for="searchInput">Search by name or LRN</label>
+          <input id="searchInput" type="text" placeholder="Type student name or LRN">
+        </div>
+
+        <button id="applyFilterBtn" class="btn" type="button">Load / Apply Filter</button>
+      </div>
+
+      <div class="table-tools">
+        <label class="checkbox-inline">
+          <input id="selectAllCheckbox" type="checkbox">
+          <span>Select all loaded students</span>
+        </label>
+        <p id="studentListHint" class="small-note">No students loaded yet.</p>
+      </div>
+
+      <div class="table-wrap">
+        <table class="student-table">
+          <thead>
+            <tr>
+              <th>Select</th>
+              <th>Name</th>
+              <th>LRN</th>
+              <th>Section</th>
+              <th>Current Points</th>
+            </tr>
+          </thead>
+          <tbody id="studentTableBody">
+            <tr>
+              <td colspan="5" class="empty-row">Loading students...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="actionPanelTitle">
+      <h2 id="actionPanelTitle">Action Panel</h2>
+      <div class="action-grid">
+        <div class="field">
+          <label for="pointsInput">Points</label>
+          <input id="pointsInput" type="number" min="1" step="1" placeholder="Enter points">
+        </div>
+
+        <div class="field field-full">
+          <label for="reasonInput">Enter reason for this action</label>
+          <textarea id="reasonInput" rows="3" placeholder="Ex: Helped classmates during group activity"></textarea>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button id="addMeritBtn" type="button" class="btn btn-positive">Add Merit</button>
+        <button id="addDemeritBtn" type="button" class="btn btn-danger">Add Demerit</button>
+      </div>
+
+      <p id="actionStatus" class="small-note"></p>
+    </section>
+
+    <section class="card" aria-labelledby="recentLogsTitle">
+      <h2 id="recentLogsTitle">Recent Point Logs</h2>
+      <div id="recentLogsList" class="logs-list" role="list"></div>
+    </section>
+  </main>
+
+  <script type="module" src="admin.js?v=1"></script>
+</body>
+</html>
