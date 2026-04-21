@@ -17,7 +17,7 @@ document.getElementById('login-form').addEventListener('submit', async (event) =
     if (userDoc.exists()) {
       const data = userDoc.data();
       if (data.role === 'teacher') {
-        window.location.href = 'teacher.html';
+        window.location.href = 'admin.html';
       } else {
         if (data.lrn && data.birthdate) {
           await autoLinkStudentToClasses({ lrn: data.lrn, birthdate: data.birthdate });
