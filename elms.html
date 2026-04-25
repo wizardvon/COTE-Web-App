@@ -20,9 +20,28 @@
     <a id="login-link" href="login.html">Login</a>
     <a id="logout-link" href="#" style="display:none;">Logout</a>
   </nav>
+
   <div class="card">
-    <h2>eLMs Page</h2>
-    <p>Placeholder content for the eLMs page.</p>
+    <h2>Resources</h2>
+    <p class="small-note">Share links and learning materials with your class.</p>
+
+    <div id="teacherResourcePanel" class="resource-create hidden">
+      <h3>Add Resource (Teacher)</h3>
+      <form id="resourceForm">
+        <label for="resourceTitle">Title</label>
+        <input id="resourceTitle" name="resourceTitle" type="text" maxlength="120" placeholder="Lesson title" required>
+
+        <label for="resourceUrl">Resource URL</label>
+        <input id="resourceUrl" name="resourceUrl" type="url" placeholder="https://..." required>
+
+        <p id="youtubeDetectHint" class="small-note hidden">Detected YouTube video. Students can watch this inside the app.</p>
+
+        <button type="submit">Save Resource</button>
+      </form>
+      <p id="resourceSaveStatus" class="small-note"></p>
+    </div>
+
+    <div id="resourcesList" class="resources-list"></div>
   </div>
 
   <script type="module">
@@ -30,5 +49,6 @@
     setupNav();
     requireLogin();
   </script>
+  <script type="module" src="elms.js"></script>
 </body>
 </html>
